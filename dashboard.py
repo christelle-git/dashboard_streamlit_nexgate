@@ -327,7 +327,7 @@ def main():
         st.metric("Durée Moyenne", f"{avg_duration:.0f}s")
     
     with col4:
-        unique_countries = sessions_df['country'].nunique() if not sessions_df.empty else 0
+        unique_countries = int(sessions_df['country'].nunique()) if not sessions_df.empty else 0
         st.metric("Pays Uniques", unique_countries)
     
     # Onglets pour différentes analyses
@@ -396,8 +396,9 @@ def main():
                 
                 # Types de fichiers
                 st.subheader("📊 Types de Fichiers")
-                files_data['file_extension'] = files_data['file_clicked'].str.split('.').str[-1]
-                ext_counts = files_data['file_extension'].value_counts()
+                files_data_copy = files_data.copy()
+                files_data_copy['file_extension'] = files_data_copy['file_clicked'].astype(str).str.split('.').str[-1]
+                ext_counts = files_data_copy['file_extension'].value_counts()
                 
                 fig2 = px.pie(values=ext_counts.values, names=ext_counts.index,
                             title="Répartition par Type de Fichier")
