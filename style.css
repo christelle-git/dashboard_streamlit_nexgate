@@ -170,13 +170,13 @@ hr {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Image mystic.jpg 5 fois plus large */
-.gallery-item-mystic {
+/* Image mystic.jpg 5 fois plus large - uniquement dans la galerie */
+.gallery .gallery-item-mystic {
   width: calc(125% - 15px) !important; /* 5 fois plus large que les autres (25% * 5 = 125%) */
   min-width: 1000px; /* Largeur minimale pour s'assurer qu'elle soit bien visible */
 }
 
-.gallery-item-mystic img {
+.gallery .gallery-item-mystic img {
   width: 100%;
   height: auto;
 }
