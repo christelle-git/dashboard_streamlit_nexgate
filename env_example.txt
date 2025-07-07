@@ -1,0 +1,17 @@
+# Configuration du système d'analytics
+WEBSITE_URL=https://christellelusso.nexgate.ch
+API_PORT=5000
+SECRET_KEY=votre-cle-secrete-unique-changez-moi
+DEBUG=True
+
+# Configuration de la base de données
+DATABASE_PATH=advanced_analytics.db
+
+# Configuration du tracking
+TRACKING_ENDPOINT=/api/track
+GEOLOCATION_ENABLED=True
+SESSION_TIMEOUT=1800
+
+# Configuration du dashboard
+DASHBOARD_PORT=8501
+DASHBOARD_TITLE="Analytics Avancé - Christelle Lusso" 

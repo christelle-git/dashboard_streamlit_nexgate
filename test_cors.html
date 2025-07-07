@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test CORS API</title>
+</head>
+<body>
+    <h1>Test CORS API PHP</h1>
+    <button onclick="testAPI()">Tester l'API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Test en cours...';
+            
+            try {
+                console.log('🔍 Test de l\'API PHP...');
+                
+                const response = await fetch('https://christellelusso.nexgate.ch/api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: 'test_cors',
+                        session_id: 'test_' + Date.now(),
+                        timestamp: new Date().toISOString(),
+                        test: true
+                    })
+                });
+                
+                console.log('✅ Réponse reçue:', response.status, response.statusText);
+                
+                const data = await response.json();
+                console.log('📊 Données reçues:', data);
+                
+                resultDiv.innerHTML = `
+                    <h3>✅ Succès !</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Réponse: ${JSON.stringify(data, null, 2)}</p>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                resultDiv.innerHTML = `
+                    <h3>❌ Erreur</h3>
+                    <p>Type: ${error.name}</p>
+                    <p>Message: ${error.message}</p>
+                    <p>Stack: ${error.stack}</p>
+                `;
+            }
+        }
+        
+        // Test automatique au chargement
+        window.onload = function() {
+            console.log('🚀 Page chargée, test automatique dans 2 secondes...');
+            setTimeout(testAPI, 2000);
+        };
+    </script>
+</body>
+</html> 
