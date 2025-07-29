@@ -3,6 +3,10 @@
 echo "🎯 Démarrage du système d'analytics avancé..."
 echo
 
+# Activation de l'environnement virtuel analytics
+echo "🔧 Activation de l'environnement virtuel analytics..."
+source analytics_env/bin/activate
+
 echo "🚀 Démarrage de l'API en arrière-plan..."
 python api_backend.py &
 API_PID=$!
@@ -10,6 +14,10 @@ echo "API démarrée avec PID: $API_PID"
 
 echo "Attente de 3 secondes..."
 sleep 3
+
+# Activation de l'environnement virtuel streamlit
+echo "🔧 Activation de l'environnement virtuel streamlit..."
+source streamlit_env/bin/activate
 
 echo "📊 Démarrage du dashboard Streamlit..."
 streamlit run dashboard.py --server.port 8501

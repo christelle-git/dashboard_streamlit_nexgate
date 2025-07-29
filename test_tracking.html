@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tracking Analytics</title>
+</head>
+<body>
+    <h1>Test du système de tracking</h1>
+    
+    <button id="testButton">Cliquez ici pour tester</button>
+    <button id="testDownload">Télécharger un fichier test</button>
+    
+    <div id="status"></div>
+    
+    <!-- Script de tracking -->
+    <script src="advanced_tracking.js"></script>
+    <script>
+        // Test manuel du tracking
+        document.getElementById('testButton').addEventListener('click', function() {
+            console.log('Test button clicked');
+            document.getElementById('status').innerHTML = 'Bouton cliqué - vérifiez la console';
+        });
+        
+        document.getElementById('testDownload').addEventListener('click', function() {
+            console.log('Download button clicked');
+            document.getElementById('status').innerHTML = 'Téléchargement simulé - vérifiez la console';
+        });
+        
+        // Vérifier si le tracker est initialisé
+        setTimeout(() => {
+            if (window.tracker) {
+                console.log('✅ Tracker initialisé avec succès');
+                document.getElementById('status').innerHTML = '✅ Tracker initialisé avec succès';
+                
+                // Test manuel d'envoi de données
+                window.tracker.sendData({
+                    type: 'manual_test',
+                    session_id: window.tracker.sessionId,
+                    timestamp: new Date().toISOString(),
+                    message: 'Test manuel depuis la page de test'
+                });
+            } else {
+                console.error('❌ Tracker non initialisé');
+                document.getElementById('status').innerHTML = '❌ Tracker non initialisé';
+            }
+        }, 1000);
+    </script>
+</body>
+</html> 

@@ -6,8 +6,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import json
 from collections import Counter
-import folium
-from streamlit_folium import folium_static
+
 from config_setup import Config
 import requests
 import os
@@ -168,64 +167,85 @@ def get_local_analytics_data():
     conn.close()
     return sessions_df, clicks_df, journeys_df
 
-@st.cache_data(ttl=60)  # Cache pendant 1 minute
+@st.cache_data(ttl=1, show_spinner=False)  # Cache réduit à 1 seconde pour des mises à jour immédiates
 def get_analytics_data():
-    """Combine les données locales et distantes"""
-    # Récupère les données distantes
-    remote_sessions, remote_clicks, remote_journeys = get_remote_analytics_data()
+    """Récupère les données depuis le serveur web"""
+    try:
+        # Récupère les données depuis votre serveur web
+        response = requests.get('https://christellelusso.nexgate.ch/analytics_data.json', timeout=10)
+        if response.status_code == 200:
+            data = response.json()
     
-    # Récupère les données locales
-    local_sessions, local_clicks, local_journeys = get_local_analytics_data()
+            # Convertit les données JSON en DataFrames
+            sessions_data = []
+            clicks_data = []
+            
+            for entry in data:
+                if entry.get('type') == 'session_start':
+                    sessions_data.append({
+                        'session_id': entry.get('session_id', ''),
+                        'user_ip': entry.get('client_ip', ''),
+                        'user_agent': entry.get('user_agent', ''),
+                        'start_time': entry.get('timestamp', ''),
+                        'country': entry.get('country', ''),
+                        'city': entry.get('city', ''),
+                        'latitude': entry.get('latitude', 0),
+                        'longitude': entry.get('longitude', 0),
+                        'date': entry.get('timestamp', '')[:10] if entry.get('timestamp') else ''
+                    })
+                elif entry.get('type') == 'click':
+                    clicks_data.append({
+                        'session_id': entry.get('session_id', ''),
+                        'element_id': entry.get('element_id', ''),
+                        'element_type': entry.get('element_type', ''),
+                        'page': entry.get('page', ''),
+                        'file_clicked': entry.get('file_clicked', ''),
+                        'timestamp': entry.get('timestamp', ''),
+                        'sequence_order': entry.get('sequence_order', 0),
+                        'date': entry.get('timestamp', '')[:10] if entry.get('timestamp') else '',
+                        'country': entry.get('country', ''),
+                        'city': entry.get('city', ''),
+                        'latitude': entry.get('latitude', 0),
+                        'longitude': entry.get('longitude', 0)
+                    })
+            
+            sessions_df = pd.DataFrame(sessions_data)
+            clicks_df = pd.DataFrame(clicks_data)
+            journeys_df = pd.DataFrame()  # À implémenter si nécessaire
+            
+            # Enrichit les sessions avec les données de géolocalisation des clics
+            if not clicks_df.empty and not sessions_df.empty:
+                # Récupère les données de géolocalisation depuis les clics
+                location_data = clicks_df[['session_id', 'country', 'city', 'latitude', 'longitude']].dropna(subset=['country', 'city'])
     
-    # Combine les données (priorité aux données distantes si disponibles)
-    if not remote_sessions.empty:
-        sessions_df = remote_sessions
-    else:
-        sessions_df = local_sessions
-    
-    if not remote_clicks.empty:
-        clicks_df = remote_clicks
-    else:
-        clicks_df = local_clicks
-    
-    if not remote_journeys.empty:
-        journeys_df = remote_journeys
-    else:
-        journeys_df = local_journeys
-    
-    return sessions_df, clicks_df, journeys_df
+                if not location_data.empty:
+                    # Prend la première occurrence de géolocalisation par session
+                    location_data = location_data.groupby('session_id').first().reset_index()
+                    
+                    # Fusionne avec les sessions
+                    sessions_df = sessions_df.merge(location_data, on='session_id', how='left', suffixes=('', '_click'))
+                    
+                    # Remplit les valeurs manquantes
+                    sessions_df['country'] = sessions_df['country'].fillna(sessions_df['country_click']).fillna('Non spécifié')
+                    sessions_df['city'] = sessions_df['city'].fillna(sessions_df['city_click']).fillna('Non spécifié')
+                    sessions_df['latitude'] = sessions_df['latitude'].fillna(sessions_df['latitude_click']).fillna(0)
+                    sessions_df['longitude'] = sessions_df['longitude'].fillna(sessions_df['longitude_click']).fillna(0)
+                    
+                    # Supprime les colonnes en double
+                    sessions_df = sessions_df.drop(['country_click', 'city_click', 'latitude_click', 'longitude_click'], axis=1, errors='ignore')
+            
+            return sessions_df, clicks_df, journeys_df, "web"  # Retourne la source
+        else:
+            # Fallback vers les données locales
+            local_sessions, local_clicks, local_journeys = get_local_analytics_data()
+            return local_sessions, local_clicks, local_journeys, "local"
+            
+    except Exception as e:
+        # Fallback vers les données locales
+        local_sessions, local_clicks, local_journeys = get_local_analytics_data()
+        return local_sessions, local_clicks, local_journeys, "local"
 
-def create_world_map(sessions_df):
-    """Crée une carte mondiale des connexions"""
-    if sessions_df.empty or sessions_df[['latitude', 'longitude']].isna().all().all():
-        return None
-    
-    # Filtre les données avec coordonnées valides
-    geo_data = sessions_df.dropna(subset=['latitude', 'longitude'])
-    
-    if geo_data.empty:
-        return None
-    
-    # Centre la carte
-    center_lat = geo_data['latitude'].mean()
-    center_lon = geo_data['longitude'].mean()
-    
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=2)
-    
-    # Groupe les sessions par localisation
-    location_counts = geo_data.groupby(['latitude', 'longitude', 'city', 'country']).size().reset_index(name='count')
-    
-    for _, row in location_counts.iterrows():
-        folium.CircleMarker(
-            location=[row['latitude'], row['longitude']],
-            radius=min(row['count'] * 2, 20),  # Taille proportionnelle
-            popup=f"{row['city']}, {row['country']}<br>Sessions: {row['count']}",
-            color='red',
-            fill=True,
-            fillOpacity=0.7
-        ).add_to(m)
-    
-    return m
+
 
 def analyze_user_journey(clicks_df):
     """Analyse les parcours utilisateur"""
@@ -284,14 +304,13 @@ def main():
     
     # Récupération des données
     try:
-        sessions_df, clicks_df, journeys_df = get_analytics_data()
+        sessions_df, clicks_df, journeys_df, data_source = get_analytics_data()
         
         # Indicateur de source de données
-        remote_sessions, remote_clicks, _ = get_remote_analytics_data()
-        if not remote_sessions.empty or not remote_clicks.empty:
-            st.success("✅ Données récupérées depuis le fichier local (serveur nexgate.ch indisponible)")
+        if data_source == "web":
+            st.success(f"✅ Données récupérées depuis le serveur web (nexgate.ch) - {datetime.now().strftime('%H:%M:%S')}")
         else:
-            st.info("ℹ️ Données récupérées depuis la base locale")
+            st.info(f"ℹ️ Données récupérées depuis la base locale - {datetime.now().strftime('%H:%M:%S')}")
             
     except Exception as e:
         st.error(f"Erreur lors du chargement des données: {e}")
@@ -309,6 +328,17 @@ def main():
     if show_realtime:
         st.sidebar.info("🔄 Actualisation toutes les 30 secondes")
     
+    # Bouton de rafraîchissement manuel
+    col1, col2 = st.sidebar.columns(2)
+    with col1:
+        if st.button("🔄 Rafraîchir"):
+            st.cache_data.clear()
+            st.rerun()
+    with col2:
+        if st.button("🗑️ Vider Cache"):
+            st.cache_data.clear()
+            st.success("Cache vidé !")
+    
     # Métriques principales
     st.subheader("📈 Métriques Principales")
     
@@ -323,36 +353,79 @@ def main():
         st.metric("Clics Totaux", total_clicks)
     
     with col3:
-        avg_duration = sessions_df['duration_seconds'].mean() if not sessions_df.empty else 0
+        if not sessions_df.empty and 'duration_seconds' in sessions_df.columns:
+            avg_duration = sessions_df['duration_seconds'].mean()
         st.metric("Durée Moyenne", f"{avg_duration:.0f}s")
+        else:
+            st.metric("Durée Moyenne", "N/A")
     
     with col4:
         unique_countries = int(sessions_df['country'].nunique()) if not sessions_df.empty else 0
         st.metric("Pays Uniques", unique_countries)
     
     # Onglets pour différentes analyses
-    tab1, tab2, tab3, tab4 = st.tabs(["🗺️ Géolocalisation", "🛤️ Parcours Utilisateurs", "📁 Fichiers Cliqués", "⏱️ Temps de Session"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🌍 Géolocalisation", "🛤️ Parcours Utilisateurs", "📁 Fichiers Cliqués", "⏱️ Temps de Session"])
     
     with tab1:
-        st.subheader("🗺️ Carte des Connexions")
+        st.subheader("🌍 Géolocalisation des Sessions")
         
         if not sessions_df.empty:
-            # Carte mondiale
-            world_map = create_world_map(sessions_df)
-            if world_map:
-                folium_static(world_map, width=1200, height=600)
-            else:
-                st.info("Aucune donnée de géolocalisation disponible")
+            # Vérifie si nous avons des données de géolocalisation
+            has_location_data = 'country' in sessions_df.columns or 'city' in sessions_df.columns
             
-            # Tableau des pays
-            st.subheader("📊 Statistiques par Pays")
-            if not sessions_df.empty:
-                country_stats = sessions_df.groupby('country').agg({
-                    'session_id': 'count',
-                    'duration_seconds': 'mean'
-                }).round(2)
-                country_stats.columns = ['Nombre de Sessions', 'Durée Moyenne (s)']
-                st.dataframe(country_stats.sort_values('Nombre de Sessions', ascending=False))
+            # Détails des sessions avec géolocalisation
+            st.subheader("📍 Détails des Sessions")
+            
+            # Prépare les données pour l'affichage
+            location_data = sessions_df.copy()
+            
+            # Ajoute des colonnes manquantes si nécessaire
+            if 'country' not in location_data.columns:
+                location_data['country'] = 'Non spécifié'
+            if 'city' not in location_data.columns:
+                location_data['city'] = 'Non spécifié'
+            if 'latitude' not in location_data.columns:
+                location_data['latitude'] = 0
+            if 'longitude' not in location_data.columns:
+                location_data['longitude'] = 0
+            
+            # Affiche les sessions avec géolocalisation
+            display_columns = ['session_id', 'country', 'city', 'start_time', 'user_ip']
+            if 'duration_seconds' in location_data.columns:
+                display_columns.append('duration_seconds')
+            
+            # Filtre les colonnes existantes
+            available_columns = [col for col in display_columns if col in location_data.columns]
+            location_display = location_data[available_columns].copy()
+            
+            # Renomme les colonnes pour l'affichage
+            column_mapping = {
+                'session_id': 'Session ID',
+                'country': 'Pays',
+                'city': 'Ville',
+                'start_time': 'Heure de Début',
+                'user_ip': 'IP Utilisateur',
+                'duration_seconds': 'Durée (s)'
+            }
+            location_display.columns = [column_mapping.get(col, col) for col in location_display.columns]
+            
+            st.dataframe(location_display, use_container_width=True)
+            
+            # Statistiques de géolocalisation
+            st.subheader("📈 Statistiques de Géolocalisation")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                unique_countries = location_data['country'].nunique() if 'country' in location_data.columns else 0
+                st.metric("Pays Uniques", unique_countries)
+            
+            with col2:
+                unique_cities = location_data['city'].nunique() if 'city' in location_data.columns else 0
+                st.metric("Villes Uniques", unique_cities)
+            
+            with col3:
+                total_sessions = len(location_data)
+                st.metric("Total Sessions", total_sessions)
         else:
             st.info("Aucune donnée de session disponible")
     
@@ -411,7 +484,7 @@ def main():
     with tab4:
         st.subheader("⏱️ Analyse du Temps de Session")
         
-        if not sessions_df.empty:
+        if not sessions_df.empty and 'duration_seconds' in sessions_df.columns:
             # Distribution des durées
             fig = px.histogram(sessions_df, x='duration_seconds', nbins=20,
                              title="Distribution des Durées de Session")
@@ -421,25 +494,35 @@ def main():
             
             # Évolution temporelle
             st.subheader("📈 Évolution de la Durée Moyenne")
-            if not sessions_df.empty:
+            if 'duration_seconds' in sessions_df.columns:
                 daily_duration = sessions_df.groupby('date')['duration_seconds'].mean().reset_index()
                 fig2 = px.line(daily_duration, x='date', y='duration_seconds',
                              title="Durée Moyenne par Jour")
                 st.plotly_chart(fig2, use_container_width=True)
+            else:
+                st.info("Données de durée non disponibles pour l'évolution temporelle")
             
             # Statistiques détaillées
             st.subheader("📊 Statistiques Détaillées")
             col1, col2 = st.columns(2)
             
             with col1:
+                if 'duration_seconds' in sessions_df.columns:
                 st.metric("Durée Minimale", f"{sessions_df['duration_seconds'].min():.0f}s")
                 st.metric("Durée Maximale", f"{sessions_df['duration_seconds'].max():.0f}s")
+                else:
+                    st.metric("Durée Minimale", "N/A")
+                    st.metric("Durée Maximale", "N/A")
             
             with col2:
+                if 'duration_seconds' in sessions_df.columns:
                 st.metric("Médiane", f"{sessions_df['duration_seconds'].median():.0f}s")
                 st.metric("Écart-type", f"{sessions_df['duration_seconds'].std():.0f}s")
+                else:
+                    st.metric("Médiane", "N/A")
+                    st.metric("Écart-type", "N/A")
         else:
-            st.info("Aucune donnée de session disponible")
+            st.info("Données de durée de session non disponibles")
     
     # Section d'export
     st.subheader("💾 Export des Données")
