@@ -693,6 +693,18 @@ $processedData = processData($rawData);
                 maxZoom: 18
             }).addTo(map);
         });
+        
+        // Forcer le basculement après 3 secondes si OpenStreetMap ne répond pas
+        setTimeout(function() {
+            if (currentLayer._url.includes('openstreetmap')) {
+                console.warn('OpenStreetMap ne répond pas, basculement forcé vers CartoDB...');
+                map.removeLayer(currentLayer);
+                currentLayer = L.tileLayer(tileLayers[1].url, {
+                    attribution: tileLayers[1].attribution,
+                    maxZoom: 18
+                }).addTo(map);
+            }
+        }, 3000);
 
         // Coordonnées par défaut pour les villes
         const cityCoords = {
