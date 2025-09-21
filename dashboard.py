@@ -31,7 +31,6 @@ def init_database():
             user_agent TEXT,
             start_time DATETIME,
             end_time DATETIME,
-            duration_seconds INTEGER,
             country TEXT,
             city TEXT,
             latitude REAL,
@@ -102,7 +101,6 @@ def get_remote_analytics_data():
                     'user_agent': entry.get('user_agent', ''),
                     'start_time': timestamp,
                     'end_time': timestamp,  # À améliorer si on a les données de fin
-                    'duration_seconds': 0,  # À calculer si on a les données de fin
                     'country': entry.get('country', ''),
                     'city': entry.get('city', ''),
                     'latitude': entry.get('latitude'),
@@ -193,6 +191,32 @@ def get_analytics_data():
                         'longitude': entry.get('longitude', 0),
                         'date': entry.get('timestamp', '')[:10] if entry.get('timestamp') else ''
                     })
+                elif entry.get('type') == 'session_end':
+                    # Met à jour la session existante avec les données de fin
+                    session_id = entry.get('session_id', '')
+                    # Cherche si cette session existe déjà dans sessions_data
+                    for session in sessions_data:
+                        if session['session_id'] == session_id:
+                            session['end_time'] = entry.get('timestamp', '')
+                            session['session_duration'] = entry.get('session_duration', 0)
+                            session['click_count'] = entry.get('click_count', 0)
+                            break
+                    else:
+                        # Si la session n'existe pas, on la crée avec les données de fin
+                        sessions_data.append({
+                            'session_id': session_id,
+                            'user_ip': entry.get('client_ip', ''),
+                            'user_agent': entry.get('user_agent', ''),
+                            'start_time': None,  # Pas de début de session
+                            'end_time': entry.get('timestamp', ''),
+                            'country': entry.get('country', ''),
+                            'city': entry.get('city', ''),
+                            'latitude': entry.get('latitude', 0),
+                            'longitude': entry.get('longitude', 0),
+                            'date': entry.get('timestamp', '')[:10] if entry.get('timestamp') else '',
+                            'session_duration': entry.get('session_duration', 0),
+                            'click_count': entry.get('click_count', 0)
+                        })
                 elif entry.get('type') == 'click':
                     clicks_data.append({
                         'session_id': entry.get('session_id', ''),
@@ -353,18 +377,15 @@ def main():
         st.metric("Clics Totaux", total_clicks)
     
     with col3:
-        if not sessions_df.empty and 'duration_seconds' in sessions_df.columns:
-            avg_duration = sessions_df['duration_seconds'].mean()
-        st.metric("Durée Moyenne", f"{avg_duration:.0f}s")
-        else:
-            st.metric("Durée Moyenne", "N/A")
-    
-    with col4:
         unique_countries = int(sessions_df['country'].nunique()) if not sessions_df.empty else 0
         st.metric("Pays Uniques", unique_countries)
     
+    with col4:
+        total_sessions = len(sessions_df) if not sessions_df.empty else 0
+        st.metric("Sessions Totales", total_sessions)
+    
     # Onglets pour différentes analyses
-    tab1, tab2, tab3, tab4 = st.tabs(["🌍 Géolocalisation", "🛤️ Parcours Utilisateurs", "📁 Fichiers Cliqués", "⏱️ Temps de Session"])
+    tab1, tab2, tab3 = st.tabs(["🌍 Géolocalisation", "🛤️ Parcours Utilisateurs", "📁 Fichiers Cliqués"])
     
     with tab1:
         st.subheader("🌍 Géolocalisation des Sessions")
@@ -391,8 +412,6 @@ def main():
             
             # Affiche les sessions avec géolocalisation
             display_columns = ['session_id', 'country', 'city', 'start_time', 'user_ip']
-            if 'duration_seconds' in location_data.columns:
-                display_columns.append('duration_seconds')
             
             # Filtre les colonnes existantes
             available_columns = [col for col in display_columns if col in location_data.columns]
@@ -405,7 +424,6 @@ def main():
                 'city': 'Ville',
                 'start_time': 'Heure de Début',
                 'user_ip': 'IP Utilisateur',
-                'duration_seconds': 'Durée (s)'
             }
             location_display.columns = [column_mapping.get(col, col) for col in location_display.columns]
             
@@ -480,49 +498,6 @@ def main():
                 st.info("Aucun fichier cliqué détecté")
         else:
             st.info("Aucune donnée de clics disponible")
-    
-    with tab4:
-        st.subheader("⏱️ Analyse du Temps de Session")
-        
-        if not sessions_df.empty and 'duration_seconds' in sessions_df.columns:
-            # Distribution des durées
-            fig = px.histogram(sessions_df, x='duration_seconds', nbins=20,
-                             title="Distribution des Durées de Session")
-            fig.update_xaxes(title="Durée (secondes)")
-            fig.update_yaxes(title="Nombre de Sessions")
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Évolution temporelle
-            st.subheader("📈 Évolution de la Durée Moyenne")
-            if 'duration_seconds' in sessions_df.columns:
-                daily_duration = sessions_df.groupby('date')['duration_seconds'].mean().reset_index()
-                fig2 = px.line(daily_duration, x='date', y='duration_seconds',
-                             title="Durée Moyenne par Jour")
-                st.plotly_chart(fig2, use_container_width=True)
-            else:
-                st.info("Données de durée non disponibles pour l'évolution temporelle")
-            
-            # Statistiques détaillées
-            st.subheader("📊 Statistiques Détaillées")
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if 'duration_seconds' in sessions_df.columns:
-                st.metric("Durée Minimale", f"{sessions_df['duration_seconds'].min():.0f}s")
-                st.metric("Durée Maximale", f"{sessions_df['duration_seconds'].max():.0f}s")
-                else:
-                    st.metric("Durée Minimale", "N/A")
-                    st.metric("Durée Maximale", "N/A")
-            
-            with col2:
-                if 'duration_seconds' in sessions_df.columns:
-                st.metric("Médiane", f"{sessions_df['duration_seconds'].median():.0f}s")
-                st.metric("Écart-type", f"{sessions_df['duration_seconds'].std():.0f}s")
-                else:
-                    st.metric("Médiane", "N/A")
-                    st.metric("Écart-type", "N/A")
-        else:
-            st.info("Données de durée de session non disponibles")
     
     # Section d'export
     st.subheader("💾 Export des Données")

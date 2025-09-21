@@ -8,7 +8,7 @@ echo "🔧 Activation de l'environnement virtuel analytics..."
 source analytics_env/bin/activate
 
 echo "🚀 Démarrage de l'API en arrière-plan..."
-python api_backend.py &
+API_PORT=5001 python api_backend.py &
 API_PID=$!
 echo "API démarrée avec PID: $API_PID"
 
@@ -20,7 +20,7 @@ echo "🔧 Activation de l'environnement virtuel streamlit..."
 source streamlit_env/bin/activate
 
 echo "📊 Démarrage du dashboard Streamlit..."
-streamlit run dashboard.py --server.port 8501
+streamlit run dashboard.py --server.port 8503
 
 # Arrêt de l'API quand Streamlit se ferme
 echo "Arrêt de l'API..."

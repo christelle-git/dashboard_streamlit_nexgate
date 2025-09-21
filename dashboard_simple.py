@@ -7,6 +7,7 @@ import requests
 import time
 import os
 import re
+from collections import Counter
 
 st.set_page_config(
     page_title="Dashboard Analytics Simplifié",
@@ -26,6 +27,7 @@ if current_time - st.session_state.last_refresh > 5:
 @st.cache_data(ttl=5, show_spinner=False)
 def get_analytics_data():
     """Récupère les données depuis le serveur web"""
+    # Essaie d'abord le serveur web avec les vraies données
     try:
         response = requests.get('https://christellelusso.nexgate.ch/analytics_data.json', timeout=10)
         if response.status_code == 200:
@@ -35,8 +37,57 @@ def get_analytics_data():
             st.error(f"Erreur HTTP: {response.status_code}")
             return [], "❌ Erreur lors de la récupération des données"
     except Exception as e:
-        st.error(f"Erreur de connexion: {e}")
-        return [], "❌ Serveur indisponible"
+        # En cas d'erreur, essaie l'API Flask locale
+        try:
+            st.warning(f"⚠️ Serveur web inaccessible ({e}). Tentative avec l'API locale...")
+            response = requests.get('http://localhost:5001/api/health', timeout=5)
+            if response.status_code == 200:
+                return [], "🔄 API locale disponible - Utilisez le dashboard complet (./start_all.sh)"
+            else:
+                return [], "❌ Serveur web et API locale indisponibles"
+        except:
+            return [], "❌ Serveur web indisponible (bloqué par proxy/VPN). Utilisez le dashboard à la maison ou désactivez le proxy."
+
+def get_test_data():
+    """Retourne des données de test pour le développement"""
+    return [
+        {
+            "type": "click",
+            "session_id": "test_session_1",
+            "page": "drawing/mystic.jpg",
+            "timestamp": "2025-07-29T15:30:00Z",
+            "country": "France",
+            "city": "Paris",
+            "client_ip": "192.168.1.100"
+        },
+        {
+            "type": "click",
+            "session_id": "test_session_1",
+            "page": "pdf/thesis.pdf",
+            "timestamp": "2025-07-29T15:32:00Z",
+            "country": "France",
+            "city": "Paris",
+            "client_ip": "192.168.1.100"
+        },
+        {
+            "type": "click",
+            "session_id": "test_session_2",
+            "page": "drawing/crazy_love_cp_clean.jpg",
+            "timestamp": "2025-07-29T16:00:00Z",
+            "country": "Suisse",
+            "city": "Genève",
+            "client_ip": "192.168.1.101"
+        },
+        {
+            "type": "click",
+            "session_id": "test_session_3",
+            "page": "pdf/abstract_lusso.pdf",
+            "timestamp": "2025-07-29T16:15:00Z",
+            "country": "Canada",
+            "city": "Montréal",
+            "client_ip": "192.168.1.102"
+        }
+    ]
 
 @st.cache_data(ttl=300, show_spinner=False)  # Cache 5 minutes pour la liste des fichiers
 def get_available_files():
@@ -131,27 +182,133 @@ def process_data(data):
     # Séparer les clics et les sessions
     clicks_df = df[df['type'] == 'click'].copy() if 'click' in df['type'].values else pd.DataFrame()
     
+    # Traiter les événements session_end pour enrichir les données
+    session_end_df = df[df['type'] == 'session_end'].copy() if 'session_end' in df['type'].values else pd.DataFrame()
+    
+    # Si on a des événements session_end, on peut les utiliser pour enrichir les sessions
+    if not session_end_df.empty:
+        # Créer un mapping session_id -> données de fin de session
+        session_end_mapping = {}
+        for _, row in session_end_df.iterrows():
+            session_id = row['session_id']
+            session_end_mapping[session_id] = {
+                'session_duration': row.get('session_duration', 0),
+                'click_count': row.get('click_count', 0),
+                'end_timestamp': row.get('timestamp', ''),
+                'client_ip': row.get('client_ip', ''),
+                'country': row.get('country', ''),
+                'city': row.get('city', ''),
+                'latitude': row.get('latitude', 0),
+                'longitude': row.get('longitude', 0)
+            }
+    
     # Traitement des données
     if not clicks_df.empty:
         # Compter les clics par session
         clicks_per_session = clicks_df.groupby('session_id').size().reset_index(name='click_count')
-        sessions_df = clicks_df.groupby('session_id').agg({
-            'timestamp': ['min', 'max'],  # début et fin de session
-            'country': 'first',
-            'city': 'first',
-            'latitude': 'first',
-            'longitude': 'first'
-        }).reset_index()
+        
+        # Adapter aux données classiques ET V6 de l'hébergeur
+        agg_columns = {
+            'timestamp': ['min', 'max']  # début et fin de session
+        }
+        
+        # PRIORITÉ 1: Colonnes classiques (qui existent dans vos données)
+        if 'country' in clicks_df.columns:
+            agg_columns['country'] = 'first'
+        if 'city' in clicks_df.columns:
+            agg_columns['city'] = 'first'
+        if 'latitude' in clicks_df.columns:
+            agg_columns['latitude'] = 'first'
+        if 'longitude' in clicks_df.columns:
+            agg_columns['longitude'] = 'first'
+        if 'client_ip' in clicks_df.columns:
+            agg_columns['client_ip'] = 'first'
+            
+        # PRIORITÉ 2: Colonnes V6 (si les classiques n'existent pas)
+        if 'country' not in agg_columns and 'geo_country' in clicks_df.columns:
+            agg_columns['geo_country'] = 'first'
+        if 'city' not in agg_columns and 'geo_city' in clicks_df.columns:
+            agg_columns['geo_city'] = 'first'
+        if 'latitude' not in agg_columns and 'gps_latitude' in clicks_df.columns:
+            agg_columns['gps_latitude'] = 'first'
+        if 'longitude' not in agg_columns and 'gps_longitude' in clicks_df.columns:
+            agg_columns['gps_longitude'] = 'first'
+        
+        sessions_df = clicks_df.groupby('session_id').agg(agg_columns).reset_index()
         
         # Renommer les colonnes
-        sessions_df.columns = ['session_id', 'session_start', 'session_end', 'country', 'city', 'latitude', 'longitude']
+        new_columns = ['session_id', 'session_start', 'session_end']
+        for col in agg_columns.keys():
+            if col != 'timestamp':
+                new_columns.append(col)
+        
+        sessions_df.columns = new_columns
+        
+        # Créer des colonnes compatibles avec l'ancien format
+        # Si on a déjà les colonnes classiques, les utiliser directement
+        if 'country' not in sessions_df.columns and 'geo_country' in sessions_df.columns:
+            sessions_df['country'] = sessions_df['geo_country']
+        if 'city' not in sessions_df.columns and 'geo_city' in sessions_df.columns:
+            sessions_df['city'] = sessions_df['geo_city']
+        if 'latitude' not in sessions_df.columns and 'gps_latitude' in sessions_df.columns:
+            sessions_df['latitude'] = sessions_df['gps_latitude']
+        if 'longitude' not in sessions_df.columns and 'gps_longitude' in sessions_df.columns:
+            sessions_df['longitude'] = sessions_df['gps_longitude']
+        
+        # Enrichir avec les données session_end si disponibles
+        if 'session_end_mapping' in locals() and session_end_mapping:
+            # Ajouter les colonnes de session_end
+            sessions_df['session_duration_from_end'] = sessions_df['session_id'].map(
+                lambda x: session_end_mapping.get(x, {}).get('session_duration', 0)
+            )
+            sessions_df['click_count_from_end'] = sessions_df['session_id'].map(
+                lambda x: session_end_mapping.get(x, {}).get('click_count', 0)
+            )
+            sessions_df['end_timestamp_from_end'] = sessions_df['session_id'].map(
+                lambda x: session_end_mapping.get(x, {}).get('end_timestamp', '')
+            )
+            sessions_df['client_ip_from_end'] = sessions_df['session_id'].map(
+                lambda x: session_end_mapping.get(x, {}).get('client_ip', '')
+            )
+            
+            # Utiliser les données de session_end pour les sessions qui n'ont pas de clics
+            sessions_created = 0
+            for session_id, end_data in session_end_mapping.items():
+                if session_id not in sessions_df['session_id'].values:
+                    # Créer une nouvelle session basée sur session_end
+                    new_session = {
+                        'session_id': session_id,
+                        'session_start': None,
+                        'session_end': end_data['end_timestamp'],
+                        'client_ip': end_data['client_ip'],
+                        'country': end_data['country'],
+                        'city': end_data['city'],
+                        'latitude': end_data['latitude'],
+                        'longitude': end_data['longitude'],
+                        'session_duration_from_end': end_data['session_duration'],
+                        'click_count_from_end': end_data['click_count'],
+                        'end_timestamp_from_end': end_data['end_timestamp']
+                    }
+                    sessions_df = pd.concat([sessions_df, pd.DataFrame([new_session])], ignore_index=True)
+                    sessions_created += 1
         
         # Calculer la durée de session (en secondes)
         sessions_df['session_start'] = pd.to_datetime(sessions_df['session_start'])
         sessions_df['session_end'] = pd.to_datetime(sessions_df['session_end'])
         sessions_df['duration_seconds'] = (sessions_df['session_end'] - sessions_df['session_start']).dt.total_seconds()
         
-        sessions_df = sessions_df.merge(clicks_per_session, on='session_id')
+        # Utiliser la durée depuis session_end si disponible
+        if 'session_duration_from_end' in sessions_df.columns:
+            sessions_df['duration_seconds'] = sessions_df['session_duration_from_end'].fillna(sessions_df['duration_seconds'])
+        
+        # Utiliser client_ip depuis session_end si client_ip n'existe pas
+        if 'client_ip_from_end' in sessions_df.columns:
+            if 'client_ip' not in sessions_df.columns:
+                sessions_df['client_ip'] = sessions_df['client_ip_from_end']
+            else:
+                sessions_df['client_ip'] = sessions_df['client_ip'].fillna(sessions_df['client_ip_from_end'])
+        
+        sessions_df = sessions_df.merge(clicks_per_session, on='session_id', how='left')
     else:
         sessions_df = pd.DataFrame()
     
@@ -202,6 +359,89 @@ def extract_filename_from_page(page_path):
     # Sinon c'est probablement un lien interne
     return f'Lien: {page_path}'
 
+def analyze_user_journey(clicks_df, sessions_df):
+    """Analyse les parcours utilisateur"""
+    # Groupe par session et crée les parcours
+    journey_data = []
+    common_paths = []
+    
+    # Traite d'abord les sessions avec des clics
+    for session_id in clicks_df['session_id'].unique():
+        session_clicks = clicks_df[clicks_df['session_id'] == session_id]
+        
+        # Trie par sequence_order si la colonne existe, sinon par timestamp
+        if 'sequence_order' in session_clicks.columns:
+            session_clicks = session_clicks.sort_values('sequence_order')
+        elif 'timestamp' in session_clicks.columns:
+            session_clicks = session_clicks.sort_values('timestamp')
+        
+        if len(session_clicks) >= 1:  # Inclut les sessions avec 1 seul clic
+            # Crée le chemin du parcours
+            path = []
+            files_clicked = []
+            
+            for _, click in session_clicks.iterrows():
+                if click['page']:
+                    path.append(click['page'])
+                # Vérifie si la colonne file_clicked existe
+                if 'file_clicked' in click and click['file_clicked']:
+                    files_clicked.append(click['file_clicked'])
+                # Sinon, essaie d'extraire le fichier depuis la page
+                elif click['page'] and any(ext in click['page'].lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.txt']):
+                    filename = extract_filename_from_page(click['page'])
+                    if filename != 'Page principale':
+                        files_clicked.append(filename)
+            
+            if path:
+                journey_str = ' → '.join(path)
+                files_str = ', '.join(files_clicked) if files_clicked else 'Aucun fichier'
+                
+                # Récupère la ville depuis sessions_df
+                city = 'Non spécifié'
+                if not sessions_df.empty and 'session_id' in sessions_df.columns and 'city' in sessions_df.columns:
+                    session_info = sessions_df[sessions_df['session_id'] == session_id]
+                    if not session_info.empty:
+                        city = session_info.iloc[0]['city'] if pd.notna(session_info.iloc[0]['city']) else 'Non spécifié'
+                
+                journey_data.append({
+                    'session_id': session_id,
+                    'ville': city,
+                    'parcours': journey_str,
+                    'fichiers_cliques': files_str,
+                    'nombre_clics': len(session_clicks),
+                    'duree_estimee': f"{len(session_clicks) * 30}s"  # Estimation basique
+                })
+                
+                common_paths.append(journey_str)
+    
+    # Ajoute les sessions sans clics
+    if not sessions_df.empty:
+        sessions_with_clicks = set(clicks_df['session_id'].unique())
+        sessions_without_clicks = sessions_df[~sessions_df['session_id'].isin(sessions_with_clicks)]
+        
+        for _, session in sessions_without_clicks.iterrows():
+            city = session.get('city', 'Non spécifié') if pd.notna(session.get('city')) else 'Non spécifié'
+            
+            journey_data.append({
+                'session_id': session['session_id'],
+                'ville': city,
+                'parcours': 'Aucun parcours (session sans clics)',
+                'fichiers_cliques': 'Aucun fichier',
+                'nombre_clics': 0,
+                'duree_estimee': '0s'
+            })
+    
+    journey_df = pd.DataFrame(journey_data)
+    
+    # Trouve les parcours les plus communs
+    if common_paths:
+        path_counts = Counter(common_paths)
+        top_paths = path_counts.most_common(10)
+    else:
+        top_paths = []
+    
+    return journey_df, top_paths
+
 def main():
     st.set_page_config(
         page_title="Tracking nexgate Christelle",
@@ -231,7 +471,7 @@ def main():
         st.metric("Sessions Totales", total_sessions)
     
     # Onglets
-    tab1, tab2 = st.tabs(["🌍 Géolocalisation", "📊 Tracking par fichier"])
+    tab1, tab2, tab3 = st.tabs(["🌍 Géolocalisation", "📊 Tracking par fichier", "🛤️ Parcours Utilisateurs"])
     
     with tab1:
         st.subheader("🌍 Géolocalisation des Sessions")
@@ -250,20 +490,78 @@ def main():
             if 'longitude' not in location_data.columns:
                 location_data['longitude'] = 0
             
-            # Affiche les sessions avec géolocalisation
-            display_columns = ['session_id', 'country', 'city', 'timestamp', 'client_ip']
+            # Créer des colonnes Date et Heure en UTC+2 (Paris)
+            
+            # Essayer session_start d'abord pour les sessions qui ont un session_start
+            if 'session_start' in location_data.columns:
+                try:
+                    # Filtrer les sessions qui ont un session_start valide
+                    mask = location_data['session_start'].notna()
+                    if mask.any():
+                        location_data.loc[mask, 'date'] = pd.to_datetime(location_data.loc[mask, 'session_start'], utc=True).dt.tz_convert('Europe/Paris').dt.date
+                        location_data.loc[mask, 'time'] = pd.to_datetime(location_data.loc[mask, 'session_start'], utc=True).dt.tz_convert('Europe/Paris').dt.time
+                except Exception as e:
+                    st.write(f"❌ Erreur avec session_start: {e}")
+            
+            # Essayer end_timestamp_from_end pour les sessions qui n'ont pas encore de date/heure
+            if 'end_timestamp_from_end' in location_data.columns:
+                try:
+                    # Filtrer les sessions qui n'ont pas encore de date/heure et qui ont un end_timestamp_from_end
+                    mask = (location_data['date'].isna() | (location_data['date'] == 'Non spécifié')) & location_data['end_timestamp_from_end'].notna()
+                    if mask.any():
+                        location_data.loc[mask, 'date'] = pd.to_datetime(location_data.loc[mask, 'end_timestamp_from_end'], utc=True).dt.tz_convert('Europe/Paris').dt.date
+                        location_data.loc[mask, 'time'] = pd.to_datetime(location_data.loc[mask, 'end_timestamp_from_end'], utc=True).dt.tz_convert('Europe/Paris').dt.time
+                except Exception as e:
+                    st.write(f"❌ Erreur avec end_timestamp_from_end: {e}")
+            
+            # Essayer timestamp pour les sessions qui n'ont pas encore de date/heure
+            if 'timestamp' in location_data.columns:
+                try:
+                    # Filtrer les sessions qui n'ont pas encore de date/heure et qui ont un timestamp
+                    mask = (location_data['date'].isna() | (location_data['date'] == 'Non spécifié')) & location_data['timestamp'].notna()
+                    if mask.any():
+                        location_data.loc[mask, 'date'] = pd.to_datetime(location_data.loc[mask, 'timestamp'], utc=True).dt.tz_convert('Europe/Paris').dt.date
+                        location_data.loc[mask, 'time'] = pd.to_datetime(location_data.loc[mask, 'timestamp'], utc=True).dt.tz_convert('Europe/Paris').dt.time
+                except Exception as e:
+                    st.write(f"❌ Erreur avec timestamp: {e}")
+            
+            # Remplir les valeurs manquantes par défaut
+            if 'date' not in location_data.columns:
+                location_data['date'] = 'Non spécifié'
+            else:
+                location_data['date'] = location_data['date'].fillna('Non spécifié')
+            
+            if 'time' not in location_data.columns:
+                location_data['time'] = 'Non spécifié'
+            else:
+                location_data['time'] = location_data['time'].fillna('Non spécifié')
+            
+            # Affiche les sessions avec géolocalisation, Date et Heure
+            display_columns = ['date', 'time', 'session_id', 'country', 'city', 'client_ip']
             available_columns = [col for col in display_columns if col in location_data.columns]
             location_display = location_data[available_columns].copy()
             
             # Renomme les colonnes pour l'affichage
             column_mapping = {
+                'date': 'Date',
+                'time': 'Heure',
                 'session_id': 'Session ID',
                 'country': 'Pays',
                 'city': 'Ville',
-                'timestamp': 'Heure',
                 'client_ip': 'IP Utilisateur'
             }
             location_display.columns = [column_mapping.get(col, col) for col in location_display.columns]
+            
+            # Trier par ordre chronologique (plus récent en premier)
+            try:
+                # Créer une colonne datetime pour le tri
+                location_display['datetime_sort'] = pd.to_datetime(location_display['Date'].astype(str) + ' ' + location_display['Heure'].astype(str), errors='coerce')
+                # Trier par datetime décroissant (plus récent en premier)
+                location_display = location_display.sort_values('datetime_sort', ascending=False)
+                # Supprimer la colonne de tri temporaire
+                location_display = location_display.drop('datetime_sort', axis=1)
+            except Exception as e:
+                st.write(f"⚠️ Impossible de trier chronologiquement: {e}")
             
             st.dataframe(location_display, use_container_width=True)
             
@@ -395,6 +693,26 @@ def main():
                     st.info("Aucun PDF trouvé")
             
             st.info("Aucun clic enregistré pour le moment")
+    
+    with tab3:
+        st.subheader("🛤️ Analyse des Parcours Utilisateurs")
+        
+        journey_df, top_paths = analyze_user_journey(clicks_df, sessions_df)
+        
+        if not journey_df.empty:
+            # Parcours les plus communs
+            st.subheader("🏆 Parcours les Plus Fréquents")
+            if top_paths:
+                paths_data = pd.DataFrame(top_paths, columns=['Parcours', 'Fréquence'])
+                fig = px.bar(paths_data.head(5), x='Fréquence', y='Parcours', 
+                            orientation='h', title="Top 5 des Parcours")
+                st.plotly_chart(fig, use_container_width=True)
+            
+            # Détails des parcours
+            st.subheader("📋 Détails des Parcours")
+            st.dataframe(journey_df, use_container_width=True)
+        else:
+            st.info("Aucune session disponible")
     
     # Bouton de rafraîchissement
     if st.sidebar.button("🔄 Rafraîchir les données"):

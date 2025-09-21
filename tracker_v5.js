@@ -5,6 +5,7 @@
     let sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
     let clickCount = 0;
     let lastClickTime = 0;
+    let sessionStartTime = Date.now();
     let locationData = {
         country: 'France',
         city: 'Non spécifié',
@@ -99,20 +100,8 @@
                         console.log('🔗 Parent chemin:', path);
                         return path;
                     } catch (e) {
+                        console.log('🔗 Parent erreur URL, retourne href:', href);
                         return href;
-                    }
-                }
-            }
-            if (parent.tagName.toLowerCase() === 'img') {
-                const src = parent.src || parent.getAttribute('src');
-                if (src) {
-                    try {
-                        const url = new URL(src, window.location.href);
-                        const path = url.pathname;
-                        console.log('📷 Parent chemin:', path);
-                        return path;
-                    } catch (e) {
-                        return src;
                     }
                 }
             }
@@ -171,6 +160,46 @@
         });
     }
     
+    // Tracker de début de session
+    function trackSessionStart() {
+        const sessionData = {
+            type: 'session_start',
+            session_id: sessionId,
+            timestamp: new Date().toISOString(),
+            user_agent: navigator.userAgent,
+            page: window.location.pathname,
+            client_ip: '127.0.0.1',
+            country: locationData.country,
+            city: locationData.city,
+            latitude: locationData.latitude,
+            longitude: locationData.longitude
+        };
+        
+        console.log('🚀 Début de session:', sessionId);
+        sendData(sessionData);
+    }
+    
+    // Tracker de fin de session
+    function trackSessionEnd() {
+        const sessionDuration = Date.now() - sessionStartTime;
+        
+        const sessionData = {
+            type: 'session_end',
+            session_id: sessionId,
+            timestamp: new Date().toISOString(),
+            session_duration: Math.round(sessionDuration / 1000), // Durée en secondes
+            click_count: clickCount,
+            client_ip: '127.0.0.1',
+            country: locationData.country,
+            city: locationData.city,
+            latitude: locationData.latitude,
+            longitude: locationData.longitude
+        };
+        
+        console.log('🏁 Fin de session:', sessionId, 'Durée:', sessionDuration, 'ms, Clics:', clickCount);
+        sendData(sessionData);
+    }
+    
     // Tracker de clic
     function trackClick(event) {
         const now = Date.now();
@@ -206,8 +235,26 @@
         // Récupère la géolocalisation
         await getRealLocation();
         
+        // Démarrer la session
+        trackSessionStart();
+        
         // Écouter les clics
         document.addEventListener('click', trackClick, true);
+        
+        // Session de fin (quand l'utilisateur quitte la page)
+        window.addEventListener('beforeunload', function() {
+            trackSessionEnd();
+        });
+        
+        // Session de fin (quand l'utilisateur ferme l'onglet)
+        window.addEventListener('unload', function() {
+            trackSessionEnd();
+        });
+        
+        // Session de fin (quand l'utilisateur navigue vers une autre page)
+        window.addEventListener('pagehide', function() {
+            trackSessionEnd();
+        });
     }
     
     // Démarrer l'initialisation

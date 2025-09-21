@@ -6,6 +6,11 @@
 source streamlit_env/bin/activate && streamlit run dashboard_simple.py --server.port 8501
 ```
 
+## Killer un serveur qui tourne
+```bash
+pkill -f "streamlit run dashboard_simple.py"
+```
+
 ## 📍 URLs d'accès :
 - **Local** : http://localhost:8501
 - **Réseau** : http://192.168.1.42:8501
@@ -17,5 +22,5 @@ source streamlit_env/bin/activate && streamlit run dashboard_simple.py --server.
 
 ## 📝 Notes importantes :
 - L'application utilise l'environnement virtuel `streamlit_env`
-- Le dashboard simple évite les erreurs de colonnes manquantes
 - Port par défaut : 8501 
+
