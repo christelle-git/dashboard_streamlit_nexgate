@@ -2,7 +2,7 @@
 <Files "dashboard_php.php">
     AuthType Basic
     AuthName "Dashboard Analytics Privé"
-    AuthUserFile /home/christellelusso/public_html/.htpasswd
+    AuthUserFile .htpasswd
     Require valid-user
 </Files>
 
