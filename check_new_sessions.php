@@ -2,13 +2,7 @@
 // Script pour vérifier les nouvelles sessions et envoyer des alertes
 header('Content-Type: application/json');
 
-// 🚨 URGENT : DÉSACTIVATION TEMPORAIRE DU SYSTÈME D'ALERTE
-echo json_encode([
-    'success' => true,
-    'message' => 'Système d\'alerte temporairement désactivé pour éviter les emails en boucle',
-    'status' => 'DISABLED'
-]);
-exit;
+// Système d'alerte activé avec limitation
 
 // Fichier pour stocker les sessions déjà notifiées
 $notifiedFile = 'notified_sessions.json';
@@ -83,14 +77,22 @@ file_put_contents($notifiedFile, json_encode($notifiedSessions));
 // Sauvegarder le timestamp de la dernière vérification
 file_put_contents($lastCheckFile, json_encode(['timestamp' => time()]));
 
-// Envoyer des alertes pour les nouvelles sessions
+// Envoyer UN SEUL email de résumé pour toutes les nouvelles sessions
 $alertsSent = 0;
-foreach ($newSessions as $session) {
-    // Envoyer l'alerte
+if (count($newSessions) > 0) {
+    // Créer un résumé de toutes les nouvelles sessions
+    $summary = [
+        'count' => count($newSessions),
+        'sessions' => $newSessions,
+        'timestamp' => date('Y-m-d H:i:s'),
+        'type' => 'summary'
+    ];
+    
+    // Envoyer l'alerte de résumé
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, 'https://christellelusso.nexgate.ch/send_alert.php');
     curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($session));
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($summary));
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
@@ -100,7 +102,7 @@ foreach ($newSessions as $session) {
     curl_close($ch);
     
     if ($httpCode === 200) {
-        $alertsSent++;
+        $alertsSent = 1; // Un seul email envoyé
     }
 }
 
