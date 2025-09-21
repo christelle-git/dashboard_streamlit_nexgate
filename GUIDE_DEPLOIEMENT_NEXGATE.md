@@ -10,13 +10,21 @@ Ce guide explique comment déployer le dashboard de tracking analytics sur l'hé
 - ✅ **Avantages** : Simple, rapide, pas de dépendances externes
 - ✅ **Compatibilité** : Fonctionne sur tous les hébergeurs PHP
 - ✅ **Maintenance** : Facile à mettre à jour via Web-FTP
+- ✅ **Coût** : Gratuit (utilise votre hébergement Nexgate)
 - ❌ **Limitations** : Moins de fonctionnalités que Streamlit
 
 ### **Option 2 : Dashboard Streamlit + Service Externe**
 - ✅ **Avantages** : Fonctionnalités complètes, interface moderne
 - ✅ **Flexibilité** : Déploiement sur VPS ou cloud
 - ❌ **Complexité** : Nécessite un serveur externe
-- ❌ **Coût** : VPS ou service cloud payant
+- ❌ **Coût** : VPS payant (5-20€/mois) ou Streamlit Cloud (gratuit)
+
+### **Architecture de votre hébergement actuel :**
+- **Site web** : GitHub Pages (`https://christellelusso.github.io/`)
+- **API + Données** : Nexgate (`https://christellelusso.nexgate.ch/`)
+- **Dashboard** : À déployer sur Nexgate (PHP) ou VPS (Streamlit)
+
+**⚠️ Important :** Ne supprimez PAS Nexgate ! Il héberge votre API et vos données.
 
 ## 🛠️ Déploiement Option 1 : Dashboard PHP
 

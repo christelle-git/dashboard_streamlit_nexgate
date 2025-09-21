@@ -100,6 +100,52 @@ export STREAMLIT_SERVER_ADDRESS=0.0.0.0
 export ANALYTICS_DATA_URL=https://christellelusso.nexgate.ch/analytics_data.json
 ```
 
+## 🏗️ Architecture et Options de Déploiement
+
+### **Architecture actuelle de votre hébergement :**
+- **Site web** : GitHub Pages (`https://christellelusso.github.io/`)
+- **API + Données** : Nexgate (`https://christellelusso.nexgate.ch/`)
+- **Dashboard** : À déployer (voir options ci-dessous)
+
+### **Qu'est-ce qu'un VPS ?**
+
+**VPS = Virtual Private Server** (Serveur Privé Virtuel)
+
+- **Définition :** Un serveur informatique "virtuel" que vous louez chez un hébergeur
+- **Exemples d'hébergeurs :** DigitalOcean, OVH, Scaleway, AWS, Google Cloud
+- **Prix :** 5-20€/mois pour un petit serveur
+- **Avantages :** 
+  - Accès complet (SSH, terminal)
+  - Installation libre (Python, Docker, etc.)
+  - Contrôle total du serveur
+  - Déploiement automatisé avec `deploy.sh`
+- **Inconvénients :** 
+  - Plus cher que l'hébergement web classique
+  - Plus complexe à gérer
+  - Nécessite des connaissances techniques
+
+### **Comparaison des solutions de déploiement :**
+
+| Aspect | Dashboard PHP | Streamlit Cloud | VPS + Streamlit |
+|--------|---------------|-----------------|-----------------|
+| **Coût** | Gratuit | Gratuit | 5-20€/mois |
+| **Hébergement** | Nexgate | Streamlit | VPS externe |
+| **Technologie** | PHP + HTML/JS | Python + Streamlit | Python + Streamlit |
+| **Installation** | Upload Web-FTP | Déploiement Git | SSH + Docker |
+| **Fonctionnalités** | Basiques | Avancées | Avancées |
+| **Maintenance** | Manuelle | Automatique | Automatique |
+| **Complexité** | Simple | Moyenne | Complexe |
+| **Contrôle** | Limité | Moyen | Total |
+
+### **Script deploy.sh - Quand l'utiliser ?**
+
+Le script `deploy.sh` est **UNIQUEMENT** pour les VPS externes :
+
+- ❌ **Nexgate** : Impossible (pas d'SSH)
+- ❌ **GitHub Pages** : Impossible (statique uniquement)
+- ✅ **VPS** : Utilisable avec `./deploy.sh production`
+- ✅ **Streamlit Cloud** : Déploiement automatique via Git
+
 ## 📊 Fonctionnalités du Dashboard
 
 ### **1. Géolocalisation des Sessions**
@@ -282,9 +328,14 @@ Pour toute question ou problème :
 ### **Problématique**
 Nexgate ne propose qu'un accès Web-FTP, pas d'SSH ni de terminal. Impossible d'installer Python ou de lancer des services.
 
+### **Architecture de votre hébergement actuel :**
+- **Site web** : GitHub Pages (`https://christellelusso.github.io/`)
+- **API + Données** : Nexgate (`https://christellelusso.nexgate.ch/`)
+- **Dashboard** : À déployer sur Nexgate (PHP) ou VPS (Streamlit)
+
 ### **Solution Recommandée : Dashboard PHP**
 
-1. **Fichiers à uploader :**
+1. **Fichiers à uploader sur Nexgate :**
    - `dashboard_php.php` - Dashboard principal
    - `tracker_v6_improved.js` - Tracker amélioré
    - `test_tracker_debug.html` - Page de test
@@ -300,12 +351,21 @@ Nexgate ne propose qu'un accès Web-FTP, pas d'SSH ni de terminal. Impossible d'
    - ✅ Mise à jour via Web-FTP
    - ✅ Interface moderne avec Bootstrap
    - ✅ Cartes interactives avec Leaflet
+   - ✅ Gratuit (utilise votre hébergement Nexgate)
 
 ### **Alternative : Service Externe**
 
 Pour garder Streamlit, déployer sur :
 - **Streamlit Cloud** (gratuit) : `https://votre-app.streamlit.app`
-- **VPS** (payant) : Votre propre serveur
+- **VPS** (payant, 5-20€/mois) : Votre propre serveur
+
+### **Comparaison des solutions :**
+
+| Solution | Coût | Complexité | Fonctionnalités | Maintenance |
+|----------|------|------------|-----------------|-------------|
+| **Dashboard PHP** | Gratuit | Simple | Bonnes | Manuelle (Web-FTP) |
+| **Streamlit Cloud** | Gratuit | Moyenne | Excellentes | Automatique (Git) |
+| **VPS + Streamlit** | 5-20€/mois | Complexe | Excellentes | Automatique (Git) |
 
 Voir `GUIDE_DEPLOIEMENT_NEXGATE.md` pour les détails complets.
 
