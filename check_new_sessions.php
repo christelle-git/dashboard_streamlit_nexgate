@@ -8,16 +8,16 @@ header('Content-Type: application/json');
 $notifiedFile = 'notified_sessions.json';
 $lastCheckFile = 'last_check.json';
 
-// Protection contre les appels trop fréquents (minimum 30 minutes entre les vérifications)
+// Protection contre les appels trop fréquents (minimum 2 minutes entre les vérifications)
 if (file_exists($lastCheckFile)) {
     $lastCheck = json_decode(file_get_contents($lastCheckFile), true);
     $timeSinceLastCheck = time() - $lastCheck['timestamp'];
     
-    if ($timeSinceLastCheck < 1800) { // 30 minutes = 1800 secondes
+    if ($timeSinceLastCheck < 120) { // 2 minutes = 120 secondes
         echo json_encode([
             'success' => true,
-            'message' => 'Vérification trop récente, attendez 30 minutes',
-            'next_check_in' => 1800 - $timeSinceLastCheck . ' secondes',
+            'message' => 'Vérification trop récente, attendez 2 minutes',
+            'next_check_in' => 120 - $timeSinceLastCheck . ' secondes',
             'debug' => 'Protection anti-spam activée'
         ]);
         exit;
