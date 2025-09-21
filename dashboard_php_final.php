@@ -667,13 +667,13 @@ $processedData = processData($rawData);
                 attribution: '© OpenStreetMap contributors'
             },
             {
-                name: 'CartoDB Positron',
-                url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                name: 'CartoDB Voyager',
+                url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
                 attribution: '© OpenStreetMap contributors © CARTO'
             },
             {
-                name: 'CartoDB Dark',
-                url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                name: 'CartoDB Positron',
+                url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
                 attribution: '© OpenStreetMap contributors © CARTO'
             }
         ];
@@ -732,6 +732,7 @@ $processedData = processData($rawData);
         // Debug spécial pour les sessions du 07/09
         if (session.timestamp && session.timestamp.includes('2025-09-07')) {
             console.log(`🔍 SESSION 07/09: ${session.session_id} - ${session.city} - Clics: ${session.click_count} - GPS original: [${session.latitude}, ${session.longitude}]`);
+            console.log(`🔍 SESSION 07/09: Coordonnées finales: [${lat}, ${lng}]`);
         }
             
             // Si pas de coordonnées GPS, essayer de les déduire de la ville
@@ -750,6 +751,11 @@ $processedData = processData($rawData);
                     lng = 2.3522;
                 }
                 console.log(`Coordonnées déduites pour ${session.session_id}: [${lat}, ${lng}]`);
+            }
+            
+            // Debug spécial pour les sessions du 07/09
+            if (session.timestamp && session.timestamp.includes('2025-09-07')) {
+                console.log(`🎯 MARQUEUR 07/09 CRÉÉ: ${session.session_id} à [${lat}, ${lng}]`);
             }
             
             // Toujours afficher la session sur la carte
