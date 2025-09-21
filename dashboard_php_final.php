@@ -197,6 +197,9 @@ function processData($data) {
     uasort($sessionMap, function($a, $b) {
         $timeA = strtotime($a['timestamp']);
         $timeB = strtotime($b['timestamp']);
+        if ($timeA === false || $timeB === false) {
+            return 0; // Garder l'ordre si timestamp invalide
+        }
         return $timeB - $timeA; // Plus récentes en premier
     });
     
@@ -216,6 +219,7 @@ function processData($data) {
         
         $userJourneys[] = [
             'session_id' => $sessionId,
+            'timestamp' => $session['timestamp'],
             'city' => $session['city'],
             'journey' => empty($clickedFiles) ? 'Aucun parcours (session sans clics)' : implode(' → ', array_unique($clickedFiles)),
             'files' => empty($clickedFiles) ? 'Aucun fichier' : implode(', ', array_unique($clickedFiles)),
@@ -227,9 +231,11 @@ function processData($data) {
     // Analyser les fichiers les plus cliqués
     $fileStats = [];
     foreach ($clicks as $click) {
-        if (isset($click['page'])) {
+        if (isset($click['page']) && !empty($click['page'])) {
             $file = basename($click['page']);
-            $fileStats[$file] = ($fileStats[$file] ?? 0) + 1;
+            if (!empty($file)) { // Filtrer les fichiers vides
+                $fileStats[$file] = ($fileStats[$file] ?? 0) + 1;
+            }
         }
     }
     arsort($fileStats);
@@ -547,6 +553,7 @@ $processedData = processData($rawData);
                                             <thead>
                                                 <tr>
                                                     <th>Session</th>
+                                                    <th>Date/Heure</th>
                                                     <th>Localisation</th>
                                                     <th>Parcours de Navigation</th>
                                                     <th>Fichiers Consultés</th>
@@ -560,6 +567,10 @@ $processedData = processData($rawData);
                                                     <td>
                                                         <code><?php echo substr($journey['session_id'], 0, 15); ?>...</code>
                                                         <br><small class="text-muted">ID de session</small>
+                                                    </td>
+                                                    <td>
+                                                        <strong><?php echo date('d/m/Y H:i', strtotime($journey['timestamp'])); ?></strong>
+                                                        <br><small class="text-muted">Date et heure</small>
                                                     </td>
                                                     <td>
                                                         <strong><?php echo htmlspecialchars($journey['city']); ?></strong>
@@ -625,6 +636,8 @@ $processedData = processData($rawData);
                 markersAdded++;
             } else {
                 sessionsWithoutCoords++;
+                // Afficher dans la console pour debug
+                console.log(`Session sans coordonnées: ${session.session_id} - ${session.city}, ${session.country}`);
             }
         });
         
