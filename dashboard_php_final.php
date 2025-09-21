@@ -215,7 +215,13 @@ function processData($data) {
         $clickedFiles = [];
         foreach ($sessionClicks as $click) {
             if (isset($click['page']) && !empty($click['page'])) {
-                $clickedFiles[] = basename($click['page']);
+                $page = $click['page'];
+                // Si c'est la page d'accueil, on l'indique
+                if ($page === '/' || $page === '') {
+                    $clickedFiles[] = 'Page d\'accueil';
+                } else {
+                    $clickedFiles[] = basename($page);
+                }
             }
         }
         
@@ -239,7 +245,12 @@ function processData($data) {
     $fileStats = [];
     foreach ($clicks as $click) {
         if (isset($click['page']) && !empty($click['page'])) {
-            $file = basename($click['page']);
+            $page = $click['page'];
+            if ($page === '/' || $page === '') {
+                $file = 'Page d\'accueil';
+            } else {
+                $file = basename($page);
+            }
             if (!empty($file)) { // Filtrer les fichiers vides
                 $fileStats[$file] = ($fileStats[$file] ?? 0) + 1;
             }
@@ -645,6 +656,9 @@ $processedData = processData($rawData);
             let lat = session.latitude;
             let lng = session.longitude;
             
+            // Debug pour toutes les sessions
+            console.log(`Session: ${session.session_id} - ${session.city}, ${session.country} - Clics: ${session.click_count} - GPS: [${lat}, ${lng}]`);
+            
             // Si pas de coordonnées GPS, essayer de les déduire de la ville
             if (!lat || !lng || lat === 0 || lng === 0) {
                 const cityName = session.city.replace(' (IP)', '').trim();
@@ -660,6 +674,7 @@ $processedData = processData($rawData);
                     lat = 48.8566;
                     lng = 2.3522;
                 }
+                console.log(`Coordonnées déduites pour ${session.session_id}: [${lat}, ${lng}]`);
             }
             
             // Toujours afficher la session sur la carte
@@ -675,11 +690,6 @@ $processedData = processData($rawData);
                     <strong>IP:</strong> ${session.client_ip}
                 `);
             markersAdded++;
-            
-            // Debug pour les sessions sans coordonnées GPS originales
-            if (!session.latitude || !session.longitude || session.latitude === 0 || session.longitude === 0) {
-                console.log(`Session avec coordonnées déduites: ${session.session_id} - ${session.city}, ${session.country} → [${lat}, ${lng}]`);
-            }
         });
         
         // Afficher un message si des sessions n'ont pas de coordonnées
