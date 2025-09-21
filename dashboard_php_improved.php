@@ -295,6 +295,44 @@ $processedData = processData($rawData);
             color: white;
             border: none;
         }
+        .table {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 15px 12px;
+        }
+        .table tbody tr {
+            transition: all 0.3s ease;
+        }
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .table tbody td {
+            padding: 12px;
+            vertical-align: middle;
+            border-top: 1px solid #e9ecef;
+        }
+        .badge {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+        .country-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -445,19 +483,13 @@ $processedData = processData($rawData);
                                                 <tr>
                                                     <th>Fichier</th>
                                                     <th>Nombre de Clics</th>
-                                                    <th>Pourcentage</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php 
-                                                $totalClicks = array_sum($processedData['file_stats']);
-                                                foreach ($processedData['file_stats'] as $file => $count): 
-                                                    $percentage = $totalClicks > 0 ? round(($count / $totalClicks) * 100, 1) : 0;
-                                                ?>
+                                                <?php foreach ($processedData['file_stats'] as $file => $count): ?>
                                                 <tr>
                                                     <td><strong><?php echo htmlspecialchars($file); ?></strong></td>
                                                     <td><span class="badge bg-primary"><?php echo $count; ?></span></td>
-                                                    <td><?php echo $percentage; ?>%</td>
                                                 </tr>
                                                 <?php endforeach; ?>
                                             </tbody>
