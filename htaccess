@@ -1,0 +1,44 @@
+# Protection du dashboard analytics
+<Files "dashboard_php.php">
+    AuthType Basic
+    AuthName "Dashboard Analytics Privé"
+    AuthUserFile .htpasswd
+    Require valid-user
+</Files>
+
+# Empêcher l'accès direct aux fichiers de données
+<Files "analytics_data.json">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+# Améliorer l'indexation
+<Files "sitemap.xml">
+    Header set Content-Type "application/xml"
+    Header set Cache-Control "public, max-age=3600"
+</Files>
+
+# Redirection pour la page d'accueil
+DirectoryIndex index.html
+
+# Empêcher l'accès aux fichiers de configuration
+<Files ".htpasswd">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+# Empêcher l'accès aux scripts d'alerte
+<Files "check_new_sessions.php">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+<Files "send_alert.php">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+<Files "test_alert_system.php">
+    Order Deny,Allow
+    Deny from all
+</Files>
