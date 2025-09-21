@@ -389,7 +389,7 @@ $processedData = processData($rawData);
                         </div>
                     </div>
 
-                    <!-- Liste des sessions avec le style des cartes -->
+                    <!-- Liste des sessions -->
                     <div class="row">
                         <div class="col-12">
                             <div class="card">
@@ -397,36 +397,42 @@ $processedData = processData($rawData);
                                     <h5>📋 Détails des Sessions</h5>
                                 </div>
                                 <div class="card-body">
-                                    <?php foreach (array_slice($processedData['sessions'], 0, 50) as $session): ?>
-                                        <div class="session-card">
-                                            <div class="row">
-                                                <div class="col-md-2">
-                                                    <strong>Date/Heure:</strong><br>
-                                                    <?php echo date('d/m/Y H:i', strtotime($session['timestamp'])); ?>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <strong>IP:</strong><br>
-                                                    <?php echo htmlspecialchars($session['client_ip']); ?>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <strong>Pays:</strong><br>
-                                                    <span class="country-badge"><?php echo htmlspecialchars($session['country']); ?></span>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <strong>Ville:</strong><br>
-                                                    <?php echo htmlspecialchars($session['city']); ?>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <strong>Durée:</strong><br>
-                                                    <?php echo isset($session['session_duration']) ? round($session['session_duration']/1000, 1) . 's' : '-'; ?>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <strong>Clics:</strong><br>
-                                                    <span class="badge bg-primary"><?php echo $session['click_count'] ?? 0; ?></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date/Heure</th>
+                                                    <th>IP</th>
+                                                    <th>Pays</th>
+                                                    <th>Ville</th>
+                                                    <th>Durée</th>
+                                                    <th>Clics</th>
+                                                    <th>Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach (array_slice($processedData['sessions'], 0, 50) as $session): ?>
+                                                    <tr>
+                                                        <td><?php echo date('d/m/Y H:i', strtotime($session['timestamp'])); ?></td>
+                                                        <td><?php echo htmlspecialchars($session['client_ip']); ?></td>
+                                                        <td><?php echo htmlspecialchars($session['country']); ?></td>
+                                                        <td><?php echo htmlspecialchars($session['city']); ?></td>
+                                                        <td><?php echo isset($session['session_duration']) ? round($session['session_duration']/1000, 1) . 's' : '-'; ?></td>
+                                                        <td><?php echo $session['click_count'] ?? 0; ?></td>
+                                                        <td>
+                                                            <?php if (isset($session['is_from_session_end'])): ?>
+                                                                <span class="badge bg-warning">Session End</span>
+                                                            <?php elseif (isset($session['is_from_session_start'])): ?>
+                                                                <span class="badge bg-success">Session Start</span>
+                                                            <?php else: ?>
+                                                                <span class="badge bg-info">From Click</span>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -475,36 +481,32 @@ $processedData = processData($rawData);
                                     <h5>🚶 Détails des Parcours</h5>
                                 </div>
                                 <div class="card-body">
-                                    <?php foreach ($processedData['user_journeys'] as $journey): ?>
-                                        <div class="session-card">
-                                            <div class="row">
-                                                <div class="col-md-2">
-                                                    <strong>Session ID:</strong><br>
-                                                    <code><?php echo substr($journey['session_id'], 0, 20); ?>...</code>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <strong>Ville:</strong><br>
-                                                    <?php echo htmlspecialchars($journey['city']); ?>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <strong>Parcours:</strong><br>
-                                                    <?php echo htmlspecialchars($journey['journey']); ?>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <strong>Fichiers:</strong><br>
-                                                    <?php echo htmlspecialchars($journey['files']); ?>
-                                                </div>
-                                                <div class="col-md-1">
-                                                    <strong>Clics:</strong><br>
-                                                    <span class="badge bg-info"><?php echo $journey['click_count']; ?></span>
-                                                </div>
-                                                <div class="col-md-1">
-                                                    <strong>Durée:</strong><br>
-                                                    <?php echo $journey['duration']; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Session ID</th>
+                                                    <th>Ville</th>
+                                                    <th>Parcours</th>
+                                                    <th>Fichiers Cliqués</th>
+                                                    <th>Nombre de Clics</th>
+                                                    <th>Durée Estimée</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($processedData['user_journeys'] as $journey): ?>
+                                                <tr>
+                                                    <td><code><?php echo substr($journey['session_id'], 0, 20); ?>...</code></td>
+                                                    <td><?php echo htmlspecialchars($journey['city']); ?></td>
+                                                    <td><?php echo htmlspecialchars($journey['journey']); ?></td>
+                                                    <td><?php echo htmlspecialchars($journey['files']); ?></td>
+                                                    <td><span class="badge bg-info"><?php echo $journey['click_count']; ?></span></td>
+                                                    <td><?php echo $journey['duration']; ?></td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
