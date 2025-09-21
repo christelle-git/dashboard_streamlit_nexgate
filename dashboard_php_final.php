@@ -722,19 +722,42 @@ $processedData = processData($rawData);
         map.whenReady(function() {
             console.log('🗺️ Carte prête, ajout des marqueurs...');
             
+            // Vérifier si la carte est visible
+            const mapContainer = document.getElementById('map');
+            console.log('🗺️ Conteneur carte:', mapContainer);
+            console.log('🗺️ Taille carte:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
+            
             // Forcer le zoom sur la France
             map.setView([46.0, 2.0], 6);
             console.log('🗺️ Vue forcée sur la France');
             
-            addMarkersToMap();
+            // Attendre un peu avant d'ajouter les marqueurs
+            setTimeout(function() {
+                console.log('🗺️ Ajout des marqueurs après délai...');
+                addMarkersToMap();
+            }, 1000);
         });
         
         function addMarkersToMap() {
             // Ajouter un marqueur de test pour vérifier que la carte fonctionne
+            console.log('🧪 Création du marqueur de test...');
             const testMarker = L.marker([48.8566, 2.3522])
                 .addTo(map)
                 .bindPopup('🧪 MARQUEUR DE TEST - Paris');
+            console.log('🧪 Marqueur de test créé:', testMarker);
             console.log('🧪 Marqueur de test ajouté à Paris');
+            
+            // Vérifier si le marqueur est sur la carte
+            setTimeout(function() {
+                const allMarkers = [];
+                map.eachLayer(function(layer) {
+                    if (layer instanceof L.Marker) {
+                        allMarkers.push(layer);
+                    }
+                });
+                console.log('🧪 Marqueurs sur la carte:', allMarkers.length);
+                console.log('🧪 Marqueurs:', allMarkers);
+            }, 500);
             
             // Ajouter les marqueurs des sessions
             let markersAdded = 0;
