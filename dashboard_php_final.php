@@ -195,7 +195,9 @@ function processData($data) {
     
     // Trier les sessions par date (plus récentes en premier)
     uasort($sessionMap, function($a, $b) {
-        return strtotime($b['timestamp']) - strtotime($a['timestamp']);
+        $timeA = strtotime($a['timestamp']);
+        $timeB = strtotime($b['timestamp']);
+        return $timeB - $timeA; // Plus récentes en premier
     });
     
     // Analyser les parcours utilisateur
@@ -462,28 +464,57 @@ $processedData = processData($rawData);
 
                 <!-- Onglet Tracking par Fichier -->
                 <div class="tab-pane fade" id="files" role="tabpanel">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6>📊 Analyse des Fichiers</h6>
+                                <p class="mb-0">Cette section montre quels fichiers sont les plus consultés sur votre site. Les fichiers sont classés par nombre de clics.</p>
+                            </div>
+                        </div>
+                    </div>
                     <div class="row">
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-header">
                                     <h5>📁 Fichiers les Plus Cliqués</h5>
+                                    <small class="text-muted">Classement par popularité</small>
                                 </div>
                                 <div class="card-body">
                                     <div class="table-responsive">
                                         <table class="table table-striped">
                                             <thead>
                                                 <tr>
+                                                    <th>#</th>
                                                     <th>Fichier</th>
                                                     <th>Nombre de Clics</th>
+                                                    <th>Type</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach ($processedData['file_stats'] as $file => $count): ?>
+                                                <?php 
+                                                $rank = 1;
+                                                foreach ($processedData['file_stats'] as $file => $count): 
+                                                    $fileType = pathinfo($file, PATHINFO_EXTENSION);
+                                                    $typeIcon = '';
+                                                    switch(strtolower($fileType)) {
+                                                        case 'pdf': $typeIcon = '📄'; break;
+                                                        case 'jpg':
+                                                        case 'jpeg':
+                                                        case 'png':
+                                                        case 'gif': $typeIcon = '🖼️'; break;
+                                                        case 'html': $typeIcon = '🌐'; break;
+                                                        default: $typeIcon = '📁'; break;
+                                                    }
+                                                ?>
                                                 <tr>
+                                                    <td><span class="badge bg-secondary"><?php echo $rank; ?></span></td>
                                                     <td><strong><?php echo htmlspecialchars($file); ?></strong></td>
                                                     <td><span class="badge bg-primary"><?php echo $count; ?></span></td>
+                                                    <td><?php echo $typeIcon; ?> <?php echo strtoupper($fileType); ?></td>
                                                 </tr>
-                                                <?php endforeach; ?>
+                                                <?php 
+                                                $rank++;
+                                                endforeach; ?>
                                             </tbody>
                                         </table>
                                     </div>
@@ -495,34 +526,57 @@ $processedData = processData($rawData);
 
                 <!-- Onglet Parcours Utilisateurs -->
                 <div class="tab-pane fade" id="journeys" role="tabpanel">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6>🚶 Analyse des Parcours Utilisateurs</h6>
+                                <p class="mb-0">Cette section montre comment les visiteurs naviguent sur votre site : quels fichiers ils consultent, dans quel ordre, et combien de temps ils restent.</p>
+                            </div>
+                        </div>
+                    </div>
                     <div class="row">
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-header">
                                     <h5>🚶 Détails des Parcours</h5>
+                                    <small class="text-muted">Analyse du comportement des visiteurs</small>
                                 </div>
                                 <div class="card-body">
                                     <div class="table-responsive">
                                         <table class="table table-striped">
                                             <thead>
                                                 <tr>
-                                                    <th>Session ID</th>
-                                                    <th>Ville</th>
-                                                    <th>Parcours</th>
-                                                    <th>Fichiers Cliqués</th>
-                                                    <th>Nombre de Clics</th>
-                                                    <th>Durée Estimée</th>
+                                                    <th>Session</th>
+                                                    <th>Localisation</th>
+                                                    <th>Parcours de Navigation</th>
+                                                    <th>Fichiers Consultés</th>
+                                                    <th>Activité</th>
+                                                    <th>Durée</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <?php foreach ($processedData['user_journeys'] as $journey): ?>
                                                 <tr>
-                                                    <td><code><?php echo substr($journey['session_id'], 0, 20); ?>...</code></td>
-                                                    <td><?php echo htmlspecialchars($journey['city']); ?></td>
-                                                    <td><?php echo htmlspecialchars($journey['journey']); ?></td>
-                                                    <td><?php echo htmlspecialchars($journey['files']); ?></td>
-                                                    <td><?php echo $journey['click_count']; ?></td>
-                                                    <td><?php echo $journey['duration']; ?></td>
+                                                    <td>
+                                                        <code><?php echo substr($journey['session_id'], 0, 15); ?>...</code>
+                                                        <br><small class="text-muted">ID de session</small>
+                                                    </td>
+                                                    <td>
+                                                        <strong><?php echo htmlspecialchars($journey['city']); ?></strong>
+                                                        <br><small class="text-muted">Ville du visiteur</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-light text-dark"><?php echo htmlspecialchars($journey['journey']); ?></span>
+                                                    </td>
+                                                    <td>
+                                                        <small><?php echo htmlspecialchars($journey['files']); ?></small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-primary"><?php echo $journey['click_count']; ?> clic<?php echo $journey['click_count'] > 1 ? 's' : ''; ?></span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-success"><?php echo $journey['duration']; ?></span>
+                                                    </td>
                                                 </tr>
                                                 <?php endforeach; ?>
                                             </tbody>
@@ -555,6 +609,8 @@ $processedData = processData($rawData);
 
         // Ajouter les marqueurs des sessions
         let markersAdded = 0;
+        let sessionsWithoutCoords = 0;
+        
         sessions.forEach(session => {
             if (session.latitude && session.longitude && session.latitude != 0 && session.longitude != 0) {
                 const marker = L.marker([session.latitude, session.longitude])
@@ -567,8 +623,15 @@ $processedData = processData($rawData);
                         Clics: ${session.click_count || 0}
                     `);
                 markersAdded++;
+            } else {
+                sessionsWithoutCoords++;
             }
         });
+        
+        // Afficher un message si des sessions n'ont pas de coordonnées
+        if (sessionsWithoutCoords > 0) {
+            console.log(`${sessionsWithoutCoords} sessions sans coordonnées GPS (non affichées sur la carte)`);
+        }
         
         // Ajuster la vue de la carte pour inclure tous les marqueurs
         if (markersAdded > 0) {
