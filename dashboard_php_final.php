@@ -13,13 +13,34 @@ $ANALYTICS_DATA_URL = 'https://christellelusso.nexgate.ch/analytics_data.json';
 $CACHE_DURATION = 300; // 5 minutes
 $CACHE_FILE = 'analytics_cache.json';
 
-// Fonction pour personnaliser l'IP fixe uniquement
+// Fonction pour personnaliser l'IP fixe et corriger les pays
 function customizeIP($ip, $country, $city) {
     if ($ip === '82.66.151.2') {
         return ['country' => 'France', 'city' => 'MOI'];
     }
     
-    // Laisser le système de géolocalisation fonctionner naturellement
+    // Corriger les pays basés sur les villes
+    $cityCountryMap = [
+        'Mountain View' => 'États-Unis',
+        'Seocho-gu' => 'Corée du Sud',
+        'Seoul' => 'Corée du Sud',
+        'San Francisco' => 'États-Unis',
+        'New York' => 'États-Unis',
+        'London' => 'Royaume-Uni',
+        'Paris' => 'France',
+        'Berlin' => 'Allemagne',
+        'Tokyo' => 'Japon',
+        'Sydney' => 'Australie',
+        'Sartrouville' => 'France',
+        'Houilles' => 'France'
+    ];
+    
+    foreach ($cityCountryMap as $cityName => $correctCountry) {
+        if (stripos($city, $cityName) !== false) {
+            return ['country' => $correctCountry, 'city' => $city];
+        }
+    }
+    
     return ['country' => $country, 'city' => $city];
 }
 
@@ -193,10 +214,15 @@ function processData($data) {
         
         $clickedFiles = [];
         foreach ($sessionClicks as $click) {
-            if (isset($click['page'])) {
+            if (isset($click['page']) && !empty($click['page'])) {
                 $clickedFiles[] = basename($click['page']);
             }
         }
+        
+        // Trier les clics par timestamp pour avoir l'ordre chronologique
+        usort($sessionClicks, function($a, $b) {
+            return strtotime($a['timestamp']) - strtotime($b['timestamp']);
+        });
         
         $userJourneys[] = [
             'session_id' => $sessionId,
@@ -631,10 +657,12 @@ $processedData = processData($rawData);
                     .addTo(map)
                     .bindPopup(`
                         <strong>Session ${session.session_id}</strong><br>
-                        Date: ${new Date(session.timestamp).toLocaleString()}<br>
-                        Pays: ${session.country}<br>
-                        Ville: ${session.city}<br>
-                        Clics: ${session.click_count || 0}
+                        <strong>Date:</strong> ${new Date(session.timestamp).toLocaleString()}<br>
+                        <strong>Pays:</strong> ${session.country}<br>
+                        <strong>Ville:</strong> ${session.city}<br>
+                        <strong>Clics:</strong> ${session.click_count || 0}<br>
+                        <strong>Durée:</strong> ${session.session_duration ? (session.session_duration/1000).toFixed(1) + 's' : '0s'}<br>
+                        <strong>IP:</strong> ${session.client_ip}
                     `);
                 markersAdded++;
             } else {
@@ -689,10 +717,10 @@ $processedData = processData($rawData);
             }
         });
 
-        // Auto-refresh toutes les 5 minutes
-        setTimeout(() => {
-            location.reload();
-        }, 300000);
+        // Auto-refresh désactivé pour éviter les bannissements
+        // setTimeout(() => {
+        //     location.reload();
+        // }, 300000);
     </script>
 </body>
 </html>
