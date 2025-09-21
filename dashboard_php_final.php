@@ -658,7 +658,41 @@ $processedData = processData($rawData);
 
         // Initialiser la carte
         const map = L.map('map').setView([46.0, 2.0], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        
+        // Essayer plusieurs sources de tuiles avec fallback
+        const tileLayers = [
+            {
+                name: 'OpenStreetMap',
+                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                attribution: '© OpenStreetMap contributors'
+            },
+            {
+                name: 'CartoDB Positron',
+                url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                attribution: '© OpenStreetMap contributors © CARTO'
+            },
+            {
+                name: 'CartoDB Dark',
+                url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                attribution: '© OpenStreetMap contributors © CARTO'
+            }
+        ];
+        
+        // Ajouter la première couche de tuiles
+        let currentLayer = L.tileLayer(tileLayers[0].url, {
+            attribution: tileLayers[0].attribution,
+            maxZoom: 18
+        }).addTo(map);
+        
+        // Gérer les erreurs de chargement des tuiles
+        currentLayer.on('tileerror', function(e) {
+            console.warn('Erreur de chargement des tuiles OpenStreetMap, essai avec CartoDB...');
+            map.removeLayer(currentLayer);
+            currentLayer = L.tileLayer(tileLayers[1].url, {
+                attribution: tileLayers[1].attribution,
+                maxZoom: 18
+            }).addTo(map);
+        });
 
         // Coordonnées par défaut pour les villes
         const cityCoords = {
