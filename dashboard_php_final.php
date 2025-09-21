@@ -747,63 +747,9 @@ $processedData = processData($rawData);
         });
         
         function addMarkersToMap() {
-            // Ajouter des marqueurs de test pour vérifier que la carte fonctionne
-            console.log('🧪 Création des marqueurs de test...');
+            // Ajouter les marqueurs des sessions
+            console.log('🗺️ Ajout des marqueurs des sessions...');
             
-            // Marqueur de test à Paris (décalé pour éviter la superposition)
-            const testMarkerParis = L.marker([48.8600, 2.3600])
-                .addTo(map)
-                .bindPopup('🧪 MARQUEUR DE TEST - Paris (décalé)');
-            console.log('🧪 Marqueur de test Paris créé:', testMarkerParis);
-            
-            // Marqueur de test à Bordeaux
-            const testMarkerBordeaux = L.marker([44.8378, -0.5792])
-                .addTo(map)
-                .bindPopup('🧪 MARQUEUR DE TEST - Bordeaux');
-            console.log('🧪 Marqueur de test Bordeaux créé:', testMarkerBordeaux);
-            
-            console.log('🧪 Marqueurs de test ajoutés à Paris et Bordeaux');
-            
-            // Vérifier si les marqueurs sont sur la carte
-            setTimeout(function() {
-                const allMarkers = [];
-                const positions = new Map();
-                
-                map.eachLayer(function(layer) {
-                    if (layer instanceof L.Marker) {
-                        allMarkers.push(layer);
-                        const pos = layer.getLatLng();
-                        const key = `${pos.lat.toFixed(4)},${pos.lng.toFixed(4)}`;
-                        if (!positions.has(key)) {
-                            positions.set(key, []);
-                        }
-                        positions.get(key).push(layer);
-                    }
-                });
-                
-                console.log('🧪 Marqueurs sur la carte:', allMarkers.length);
-                console.log('🧪 Marqueurs:', allMarkers);
-                
-                // Vérifier les superpositions
-                positions.forEach((markers, pos) => {
-                    if (markers.length > 1) {
-                        console.log(`⚠️ SUPERPOSITION détectée à ${pos}: ${markers.length} marqueurs`);
-                    }
-                });
-                
-                // Vérifier si les marqueurs de test sont visibles
-                if (testMarkerParis) {
-                    console.log('🧪 Marqueur Paris existe:', testMarkerParis);
-                    console.log('🧪 Position marqueur Paris:', testMarkerParis.getLatLng());
-                    console.log('🧪 Marqueur Paris visible:', map.hasLayer(testMarkerParis));
-                }
-                
-                if (testMarkerBordeaux) {
-                    console.log('🧪 Marqueur Bordeaux existe:', testMarkerBordeaux);
-                    console.log('🧪 Position marqueur Bordeaux:', testMarkerBordeaux.getLatLng());
-                    console.log('🧪 Marqueur Bordeaux visible:', map.hasLayer(testMarkerBordeaux));
-                }
-            }, 500);
             
             // Ajouter les marqueurs des sessions
             let markersAdded = 0;
@@ -895,7 +841,7 @@ $processedData = processData($rawData);
             }
             
             // Ajuster la vue de la carte pour inclure tous les marqueurs
-            console.log(`📊 Total marqueurs créés: ${markersAdded + 2} (${markersAdded} sessions externes + 2 tests)`);
+            console.log(`📊 Total marqueurs créés: ${markersAdded} (sessions externes uniquement)`);
             console.log(`📊 Sessions de mon IP filtrées (non affichées sur la carte)`);
             
             // Toujours ajuster la vue pour inclure tous les marqueurs (tests + sessions)
