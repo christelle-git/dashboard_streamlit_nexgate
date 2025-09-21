@@ -727,6 +727,14 @@ $processedData = processData($rawData);
             console.log('🗺️ Conteneur carte:', mapContainer);
             console.log('🗺️ Taille carte:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
             
+            // Forcer l'invalidation de la carte
+            map.invalidateSize();
+            console.log('🗺️ Carte invalidée');
+            
+            // Vérifier si la carte a des tuiles
+            console.log('🗺️ Carte centre:', map.getCenter());
+            console.log('🗺️ Carte zoom:', map.getZoom());
+            
             // Forcer le zoom sur la France
             map.setView([46.0, 2.0], 6);
             console.log('🗺️ Vue forcée sur la France');
@@ -757,6 +765,13 @@ $processedData = processData($rawData);
                 });
                 console.log('🧪 Marqueurs sur la carte:', allMarkers.length);
                 console.log('🧪 Marqueurs:', allMarkers);
+                
+                // Vérifier si le marqueur de test est visible
+                if (testMarker) {
+                    console.log('🧪 Marqueur de test existe:', testMarker);
+                    console.log('🧪 Position marqueur test:', testMarker.getLatLng());
+                    console.log('🧪 Marqueur test visible:', map.hasLayer(testMarker));
+                }
             }, 500);
             
             // Ajouter les marqueurs des sessions
