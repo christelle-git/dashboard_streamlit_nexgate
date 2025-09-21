@@ -2,7 +2,14 @@
 // Script pour vérifier les nouvelles sessions et envoyer des alertes
 header('Content-Type: application/json');
 
-// Système d'alerte avec débogage et limitation stricte
+// 🚨 URGENT : DÉSACTIVATION COMPLÈTE POUR ÉVITER LE DÉRÉFÉRENCEMENT
+echo json_encode([
+    'success' => false,
+    'message' => 'Système d\'alerte DÉSACTIVÉ pour éviter le déréférencement',
+    'status' => 'DISABLED_FOR_SEO',
+    'reason' => 'Protection contre le déréférencement Google'
+]);
+exit;
 
 // Fichier pour stocker les sessions déjà notifiées
 $notifiedFile = 'notified_sessions.json';

@@ -1,0 +1,14 @@
+User-agent: *
+Disallow: /check_new_sessions.php
+Disallow: /send_alert.php
+Disallow: /test_alert_system.php
+Disallow: /dashboard_php.php
+Disallow: /analytics_data.json
+Disallow: /notified_sessions.json
+Disallow: /last_check.json
+
+# Autoriser l'indexation du site principal
+Allow: /
+Allow: /index.html
+Allow: /pdf/
+Allow: /drawing/
