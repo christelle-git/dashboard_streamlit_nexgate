@@ -4,6 +4,22 @@ header('Content-Type: application/json');
 
 // Fichier pour stocker les sessions déjà notifiées
 $notifiedFile = 'notified_sessions.json';
+$lastCheckFile = 'last_check.json';
+
+// Protection contre les appels trop fréquents (minimum 5 minutes entre les vérifications)
+if (file_exists($lastCheckFile)) {
+    $lastCheck = json_decode(file_get_contents($lastCheckFile), true);
+    $timeSinceLastCheck = time() - $lastCheck['timestamp'];
+    
+    if ($timeSinceLastCheck < 300) { // 5 minutes = 300 secondes
+        echo json_encode([
+            'success' => true,
+            'message' => 'Vérification trop récente, attendez 5 minutes',
+            'next_check_in' => 300 - $timeSinceLastCheck . ' secondes'
+        ]);
+        exit;
+    }
+}
 
 // Charger les sessions déjà notifiées
 $notifiedSessions = [];
@@ -39,10 +55,15 @@ foreach ($externalSessions as $event) {
     }
 }
 
-// Vérifier les nouvelles sessions
+// Vérifier les nouvelles sessions (seulement celles des dernières 24h)
 $newSessions = [];
+$yesterday = date('Y-m-d', strtotime('-1 day'));
+
 foreach ($sessions as $sessionId => $session) {
-    if (!in_array($sessionId, $notifiedSessions)) {
+    // Vérifier si la session est récente (dernières 24h)
+    $sessionDate = date('Y-m-d', strtotime($session['timestamp']));
+    
+    if ($sessionDate >= $yesterday && !in_array($sessionId, $notifiedSessions)) {
         $newSessions[] = $session;
         $notifiedSessions[] = $sessionId;
     }
@@ -50,6 +71,9 @@ foreach ($sessions as $sessionId => $session) {
 
 // Sauvegarder les sessions notifiées
 file_put_contents($notifiedFile, json_encode($notifiedSessions));
+
+// Sauvegarder le timestamp de la dernière vérification
+file_put_contents($lastCheckFile, json_encode(['timestamp' => time()]));
 
 // Envoyer des alertes pour les nouvelles sessions
 $alertsSent = 0;
