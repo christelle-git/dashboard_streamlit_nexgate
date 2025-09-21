@@ -13,32 +13,13 @@ $ANALYTICS_DATA_URL = 'https://christellelusso.nexgate.ch/analytics_data.json';
 $CACHE_DURATION = 300; // 5 minutes
 $CACHE_FILE = 'analytics_cache.json';
 
-// Fonction pour personnaliser l'IP fixe et corriger les pays
+// Fonction pour personnaliser l'IP fixe uniquement
 function customizeIP($ip, $country, $city) {
     if ($ip === '82.66.151.2') {
         return ['country' => 'France', 'city' => 'MOI'];
     }
     
-    // Corriger les pays basés sur les villes
-    $cityCountryMap = [
-        'Mountain View' => 'États-Unis',
-        'Seocho-gu' => 'Corée du Sud',
-        'Seoul' => 'Corée du Sud',
-        'San Francisco' => 'États-Unis',
-        'New York' => 'États-Unis',
-        'London' => 'Royaume-Uni',
-        'Paris' => 'France',
-        'Berlin' => 'Allemagne',
-        'Tokyo' => 'Japon',
-        'Sydney' => 'Australie'
-    ];
-    
-    foreach ($cityCountryMap as $cityName => $correctCountry) {
-        if (stripos($city, $cityName) !== false) {
-            return ['country' => $correctCountry, 'city' => $city];
-        }
-    }
-    
+    // Laisser le système de géolocalisation fonctionner naturellement
     return ['country' => $country, 'city' => $city];
 }
 
@@ -440,7 +421,7 @@ $processedData = processData($rawData);
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach (array_slice($processedData['sessions'], 0, 50) as $session): ?>
+                                                <?php foreach (array_slice($processedData['sessions'], 0, 100) as $session): ?>
                                                     <tr>
                                                         <td><?php echo date('d/m/Y H:i', strtotime($session['timestamp'])); ?></td>
                                                         <td><?php echo htmlspecialchars($session['client_ip']); ?></td>
@@ -618,13 +599,35 @@ $processedData = processData($rawData);
         const map = L.map('map').setView([46.0, 2.0], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
+        // Coordonnées par défaut pour les villes
+        const cityCoords = {
+            'Paris': [48.8566, 2.3522],
+            'Sartrouville': [48.9442, 2.1917],
+            'Mountain View': [37.3861, -122.0839],
+            'Seocho-gu': [37.4945, 127.0276],
+            'Seoul': [37.5665, 126.9780],
+            'Houilles': [48.9226, 2.1850]
+        };
+        
         // Ajouter les marqueurs des sessions
         let markersAdded = 0;
         let sessionsWithoutCoords = 0;
         
         sessions.forEach(session => {
-            if (session.latitude && session.longitude && session.latitude != 0 && session.longitude != 0) {
-                const marker = L.marker([session.latitude, session.longitude])
+            let lat = session.latitude;
+            let lng = session.longitude;
+            
+            // Si pas de coordonnées GPS, essayer de les déduire de la ville
+            if (!lat || !lng || lat === 0 || lng === 0) {
+                const cityName = session.city.replace(' (IP)', '').trim();
+                if (cityCoords[cityName]) {
+                    lat = cityCoords[cityName][0];
+                    lng = cityCoords[cityName][1];
+                }
+            }
+            
+            if (lat && lng && lat !== 0 && lng !== 0) {
+                const marker = L.marker([lat, lng])
                     .addTo(map)
                     .bindPopup(`
                         <strong>Session ${session.session_id}</strong><br>
