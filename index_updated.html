@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christelle Lusso - Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Tracker Analytics V6 Amélioré -->
+    <script>
+        // Tracker Analytics V6 - Version complète avec session_start
+        (function() {
+            'use strict';
+            
+            // Configuration
+            const API_URL = 'api.php';
+            const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+            
+            // Variables globales
+            let sessionId = null;
+            let sessionStart = null;
+            let clickCount = 0;
+            let isTracking = false;
+            
+            // Initialisation
+            function init() {
+                startSession();
+                setupEventListeners();
+                isTracking = true;
+                console.log('🚀 Tracker Analytics V6 initialisé');
+            }
+            
+            // Demarrer une nouvelle session
+            function startSession() {
+                sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStart = new Date().toISOString();
+                
+                // Envoyer un événement session_start immédiatement
+                sendData({
+                    type: 'session_start',
+                    session_id: sessionId,
+                    timestamp: sessionStart,
+                    user_agent: navigator.userAgent,
+                    page: window.location.pathname,
+                    referrer: document.referrer || '',
+                    language: navigator.language || 'fr',
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris',
+                    screen_resolution: screen.width + 'x' + screen.height,
+                    viewport_size: window.innerWidth + 'x' + window.innerHeight
+                });
+            }
+            
+            // Verifier si la session a expire
+            function checkSessionExpiry() {
+                if (sessionStart && (Date.now() - new Date(sessionStart).getTime()) > SESSION_TIMEOUT) {
+                    startSession();
+                }
+            }
+            
+            // Recuperer la position GPS
+            function getGPSLocation() {
+                return new Promise((resolve) => {
+                    if (!navigator.geolocation) {
+                        resolve(null);
+                        return;
+                    }
+                    
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const coords = position.coords;
+                            resolve({
+                                latitude: coords.latitude,
+                                longitude: coords.longitude,
+                                accuracy: coords.accuracy
+                            });
+                        },
+                        (error) => {
+                            resolve(null);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 15000,
+                            maximumAge: 0
+                        }
+                    );
+                });
+            }
+            
+            // Envoyer les donnees au serveur
+            async function sendData(data) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Tracker-Agent': 'TrackerV6/1.0'
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    return response.ok;
+                } catch (error) {
+                    console.error('Erreur envoi données:', error);
+                    return false;
+                }
+            }
+            
+            // Traiter un clic
+            async function handleClick(event) {
+                if (!isTracking) return;
+                
+                checkSessionExpiry();
+                clickCount++;
+                
+                const gps = await getGPSLocation();
+                
+                const clickData = {
+                    type: 'click',
+                    session_id: sessionId,
+                    timestamp: new Date().toISOString(),
+                    page: window.location.pathname,
+                    element_type: event.target.tagName.toLowerCase(),
+                    sequence_order: clickCount,
+                    x_coordinate: event.clientX,
+                    y_coordinate: event.clientY,
+                    client_ip: 'Non specifie',
+                    ip_source: 'client',
+                    gps_latitude: gps ? gps.latitude : 0,
+                    gps_longitude: gps ? gps.longitude : 0,
+                    gps_accuracy: gps ? gps.accuracy : 0,
+                    gps_source: gps ? 'browser' : 'none',
+                    user_agent: navigator.userAgent,
+                    screen_resolution: screen.width + 'x' + screen.height,
+                    viewport_size: window.innerWidth + 'x' + window.innerHeight,
+                    referrer: document.referrer || '',
+                    language: navigator.language || 'fr',
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris'
+                };
+                
+                await sendData(clickData);
+            }
+            
+            // Configurer les ecouteurs d'evenements
+            function setupEventListeners() {
+                // Clics sur tous les elements cliquables
+                document.addEventListener('click', handleClick, true);
+                
+                // Navigation
+                window.addEventListener('popstate', () => {
+                    startSession();
+                });
+                
+                // Visibilite de la page
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) {
+                        checkSessionExpiry();
+                    }
+                });
+                
+                // Avant de quitter la page
+                window.addEventListener('beforeunload', () => {
+                    if (sessionId) {
+                        sendData({
+                            type: 'session_end',
+                            session_id: sessionId,
+                            timestamp: new Date().toISOString(),
+                            duration: Date.now() - new Date(sessionStart).getTime(),
+                            click_count: clickCount
+                        });
+                    }
+                });
+                
+                // Session de fin (quand l'utilisateur ferme l'onglet)
+                window.addEventListener('unload', () => {
+                    if (sessionId) {
+                        sendData({
+                            type: 'session_end',
+                            session_id: sessionId,
+                            timestamp: new Date().toISOString(),
+                            duration: Date.now() - new Date(sessionStart).getTime(),
+                            click_count: clickCount
+                        });
+                    }
+                });
+                
+                // Session de fin (quand l'utilisateur navigue vers une autre page)
+                window.addEventListener('pagehide', () => {
+                    if (sessionId) {
+                        sendData({
+                            type: 'session_end',
+                            session_id: sessionId,
+                            timestamp: new Date().toISOString(),
+                            duration: Date.now() - new Date(sessionStart).getTime(),
+                            click_count: clickCount
+                        });
+                    }
+                });
+            }
+            
+            // Demarrer le tracker quand le DOM est pret
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+            
+            // Exposer des fonctions pour le debug
+            window.TrackerV6 = {
+                getSessionId: () => sessionId,
+                getClickCount: () => clickCount,
+                getSessionStart: () => sessionStart,
+                isTracking: () => isTracking,
+                forceNewSession: startSession
+            };
+            
+        })();
+    </script>
+</head>
+<body>
+    <!-- Votre contenu existant ici -->
+    <div class="container">
+        <h1>Christelle Lusso - Portfolio</h1>
+        
+        <!-- Ajouter un lien vers le dashboard -->
+        <div class="dashboard-link">
+            <a href="dashboard_php.php" target="_blank" class="btn-dashboard">
+                📊 Voir le Dashboard Analytics
+            </a>
+        </div>
+        
+        <!-- Votre contenu existant -->
+        <!-- ... -->
+    </div>
+    
+    <style>
+        .dashboard-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .btn-dashboard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .btn-dashboard:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</body>
+</html>
