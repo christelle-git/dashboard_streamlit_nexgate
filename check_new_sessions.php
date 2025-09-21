@@ -2,28 +2,23 @@
 // Script pour vérifier les nouvelles sessions et envoyer des alertes
 header('Content-Type: application/json');
 
-// 🚨 URGENT : DÉSACTIVATION COMPLÈTE DU SYSTÈME D'ALERTE
-echo json_encode([
-    'success' => true,
-    'message' => 'Système d\'alerte COMPLÈTEMENT désactivé - Plus d\'emails envoyés',
-    'status' => 'DISABLED_PERMANENTLY'
-]);
-exit;
+// Système d'alerte avec débogage et limitation stricte
 
 // Fichier pour stocker les sessions déjà notifiées
 $notifiedFile = 'notified_sessions.json';
 $lastCheckFile = 'last_check.json';
 
-// Protection contre les appels trop fréquents (minimum 5 minutes entre les vérifications)
+// Protection contre les appels trop fréquents (minimum 30 minutes entre les vérifications)
 if (file_exists($lastCheckFile)) {
     $lastCheck = json_decode(file_get_contents($lastCheckFile), true);
     $timeSinceLastCheck = time() - $lastCheck['timestamp'];
     
-    if ($timeSinceLastCheck < 300) { // 5 minutes = 300 secondes
+    if ($timeSinceLastCheck < 1800) { // 30 minutes = 1800 secondes
         echo json_encode([
             'success' => true,
-            'message' => 'Vérification trop récente, attendez 5 minutes',
-            'next_check_in' => 300 - $timeSinceLastCheck . ' secondes'
+            'message' => 'Vérification trop récente, attendez 30 minutes',
+            'next_check_in' => 1800 - $timeSinceLastCheck . ' secondes',
+            'debug' => 'Protection anti-spam activée'
         ]);
         exit;
     }
@@ -85,14 +80,21 @@ file_put_contents($lastCheckFile, json_encode(['timestamp' => time()]));
 
 // Envoyer UN SEUL email de résumé pour toutes les nouvelles sessions
 $alertsSent = 0;
+$debugInfo = [];
+
 if (count($newSessions) > 0) {
+    $debugInfo[] = "Nouvelles sessions détectées: " . count($newSessions);
+    
     // Créer un résumé de toutes les nouvelles sessions
     $summary = [
         'count' => count($newSessions),
         'sessions' => $newSessions,
         'timestamp' => date('Y-m-d H:i:s'),
-        'type' => 'summary'
+        'type' => 'summary',
+        'debug' => 'Email de résumé unique'
     ];
+    
+    $debugInfo[] = "Résumé créé avec " . count($newSessions) . " sessions";
     
     // Envoyer l'alerte de résumé
     $ch = curl_init();
@@ -107,15 +109,27 @@ if (count($newSessions) > 0) {
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     
+    $debugInfo[] = "CURL HTTP Code: " . $httpCode;
+    $debugInfo[] = "CURL Result: " . substr($result, 0, 100);
+    
     if ($httpCode === 200) {
         $alertsSent = 1; // Un seul email envoyé
+        $debugInfo[] = "Email envoyé avec succès";
+    } else {
+        $debugInfo[] = "Erreur envoi email: " . $httpCode;
     }
+} else {
+    $debugInfo[] = "Aucune nouvelle session détectée";
 }
 
 echo json_encode([
     'success' => true,
     'new_sessions' => count($newSessions),
     'alerts_sent' => $alertsSent,
-    'total_external_sessions' => count($sessions)
+    'total_external_sessions' => count($sessions),
+    'message' => "$alertsSent email(s) de résumé envoyé(s) pour " . count($newSessions) . " nouvelle(s) session(s).",
+    'debug' => $debugInfo,
+    'timestamp' => date('Y-m-d H:i:s'),
+    'protection' => '30 minutes entre les vérifications'
 ]);
 ?>
