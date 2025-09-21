@@ -718,11 +718,18 @@ $processedData = processData($rawData);
             'Sartrouville (IP)': [48.9442, 2.1917]
         };
         
-        // Ajouter les marqueurs des sessions
-        let markersAdded = 0;
-        let sessionsWithoutCoords = 0;
+        // Attendre que la carte soit prête avant d'ajouter les marqueurs
+        map.whenReady(function() {
+            console.log('🗺️ Carte prête, ajout des marqueurs...');
+            addMarkersToMap();
+        });
         
-        sessions.forEach(session => {
+        function addMarkersToMap() {
+            // Ajouter les marqueurs des sessions
+            let markersAdded = 0;
+            let sessionsWithoutCoords = 0;
+            
+            sessions.forEach(session => {
             let lat = session.latitude;
             let lng = session.longitude;
             
@@ -778,25 +785,26 @@ $processedData = processData($rawData);
             }
         });
         
-        // Afficher un message si des sessions n'ont pas de coordonnées
-        if (sessionsWithoutCoords > 0) {
-            console.log(`${sessionsWithoutCoords} sessions sans coordonnées GPS (non affichées sur la carte)`);
-        }
-        
-        // Ajuster la vue de la carte pour inclure tous les marqueurs
-        if (markersAdded > 0) {
-            console.log(`🗺️ Ajustement de la vue pour ${markersAdded} marqueurs`);
-            const group = new L.featureGroup();
-            map.eachLayer(function(layer) {
-                if (layer instanceof L.Marker) {
-                    group.addLayer(layer);
+            // Afficher un message si des sessions n'ont pas de coordonnées
+            if (sessionsWithoutCoords > 0) {
+                console.log(`${sessionsWithoutCoords} sessions sans coordonnées GPS (non affichées sur la carte)`);
+            }
+            
+            // Ajuster la vue de la carte pour inclure tous les marqueurs
+            if (markersAdded > 0) {
+                console.log(`🗺️ Ajustement de la vue pour ${markersAdded} marqueurs`);
+                const group = new L.featureGroup();
+                map.eachLayer(function(layer) {
+                    if (layer instanceof L.Marker) {
+                        group.addLayer(layer);
+                    }
+                });
+                if (group.getLayers().length > 0) {
+                    map.fitBounds(group.getBounds().pad(0.1));
+                    console.log(`🗺️ Vue ajustée pour ${group.getLayers().length} marqueurs`);
+                } else {
+                    console.warn('⚠️ Aucun marqueur trouvé pour ajuster la vue');
                 }
-            });
-            if (group.getLayers().length > 0) {
-                map.fitBounds(group.getBounds().pad(0.1));
-                console.log(`🗺️ Vue ajustée pour ${group.getLayers().length} marqueurs`);
-            } else {
-                console.warn('⚠️ Aucun marqueur trouvé pour ajuster la vue');
             }
         }
 
