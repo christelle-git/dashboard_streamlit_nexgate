@@ -225,6 +225,11 @@ function processData($data) {
             }
         }
         
+        // Si pas de clics sur des fichiers spécifiques, mais qu'il y a des clics, on indique "Navigation sur le site"
+        if (empty($clickedFiles) && count($sessionClicks) > 0) {
+            $clickedFiles[] = 'Navigation sur le site';
+        }
+        
         // Trier les clics par timestamp pour avoir l'ordre chronologique
         usort($sessionClicks, function($a, $b) {
             return strtotime($a['timestamp']) - strtotime($b['timestamp']);
@@ -256,6 +261,14 @@ function processData($data) {
             }
         }
     }
+    
+    // Ajouter "Navigation sur le site" si il y a des clics sans page spécifique
+    $totalClicks = count($clicks);
+    $totalPageClicks = array_sum($fileStats);
+    if ($totalClicks > $totalPageClicks) {
+        $fileStats['Navigation sur le site'] = $totalClicks - $totalPageClicks;
+    }
+    
     arsort($fileStats);
     
     return [
@@ -656,8 +669,13 @@ $processedData = processData($rawData);
             let lat = session.latitude;
             let lng = session.longitude;
             
-            // Debug pour toutes les sessions
-            console.log(`Session: ${session.session_id} - ${session.city}, ${session.country} - Clics: ${session.click_count} - GPS: [${lat}, ${lng}]`);
+        // Debug pour toutes les sessions
+        console.log(`Session: ${session.session_id} - ${session.city}, ${session.country} - Clics: ${session.click_count} - GPS: [${lat}, ${lng}]`);
+        
+        // Debug spécial pour les sessions du 07/09
+        if (session.timestamp && session.timestamp.includes('2025-09-07')) {
+            console.log(`🔍 SESSION 07/09: ${session.session_id} - ${session.city} - Clics: ${session.click_count} - GPS original: [${session.latitude}, ${session.longitude}]`);
+        }
             
             // Si pas de coordonnées GPS, essayer de les déduire de la ville
             if (!lat || !lng || lat === 0 || lng === 0) {
