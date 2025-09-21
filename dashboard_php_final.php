@@ -811,6 +811,12 @@ $processedData = processData($rawData);
             const usedPositions = new Map(); // Pour éviter les superpositions
             
             sessions.forEach(session => {
+            // Filtrer les sessions de mon IP fixe (82.66.151.2)
+            if (session.client_ip === '82.66.151.2') {
+                console.log(`🚫 Session filtrée (mon IP): ${session.session_id} - ${session.city}, ${session.country}`);
+                return; // Ignorer cette session
+            }
+            
             let lat = session.latitude;
             let lng = session.longitude;
             
@@ -889,7 +895,8 @@ $processedData = processData($rawData);
             }
             
             // Ajuster la vue de la carte pour inclure tous les marqueurs
-            console.log(`📊 Total marqueurs créés: ${markersAdded + 2} (${markersAdded} sessions + 2 tests)`);
+            console.log(`📊 Total marqueurs créés: ${markersAdded + 2} (${markersAdded} sessions externes + 2 tests)`);
+            console.log(`📊 Sessions de mon IP filtrées (non affichées sur la carte)`);
             
             // Toujours ajuster la vue pour inclure tous les marqueurs (tests + sessions)
             console.log(`🗺️ Ajustement de la vue pour tous les marqueurs`);
