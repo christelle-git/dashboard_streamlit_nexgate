@@ -735,9 +735,9 @@ $processedData = processData($rawData);
             console.log('🗺️ Carte centre:', map.getCenter());
             console.log('🗺️ Carte zoom:', map.getZoom());
             
-            // Forcer le zoom sur la France
-            map.setView([46.0, 2.0], 6);
-            console.log('🗺️ Vue forcée sur la France');
+            // Forcer le zoom sur la France pour inclure Paris et Bordeaux
+            map.setView([46.5, 1.0], 6);
+            console.log('🗺️ Vue forcée sur la France (Paris + Bordeaux)');
             
             // Attendre un peu avant d'ajouter les marqueurs
             setTimeout(function() {
@@ -750,10 +750,10 @@ $processedData = processData($rawData);
             // Ajouter des marqueurs de test pour vérifier que la carte fonctionne
             console.log('🧪 Création des marqueurs de test...');
             
-            // Marqueur de test à Paris
-            const testMarkerParis = L.marker([48.8566, 2.3522])
+            // Marqueur de test à Paris (décalé pour éviter la superposition)
+            const testMarkerParis = L.marker([48.8600, 2.3600])
                 .addTo(map)
-                .bindPopup('🧪 MARQUEUR DE TEST - Paris');
+                .bindPopup('🧪 MARQUEUR DE TEST - Paris (décalé)');
             console.log('🧪 Marqueur de test Paris créé:', testMarkerParis);
             
             // Marqueur de test à Bordeaux
@@ -767,13 +767,29 @@ $processedData = processData($rawData);
             // Vérifier si les marqueurs sont sur la carte
             setTimeout(function() {
                 const allMarkers = [];
+                const positions = new Map();
+                
                 map.eachLayer(function(layer) {
                     if (layer instanceof L.Marker) {
                         allMarkers.push(layer);
+                        const pos = layer.getLatLng();
+                        const key = `${pos.lat.toFixed(4)},${pos.lng.toFixed(4)}`;
+                        if (!positions.has(key)) {
+                            positions.set(key, []);
+                        }
+                        positions.get(key).push(layer);
                     }
                 });
+                
                 console.log('🧪 Marqueurs sur la carte:', allMarkers.length);
                 console.log('🧪 Marqueurs:', allMarkers);
+                
+                // Vérifier les superpositions
+                positions.forEach((markers, pos) => {
+                    if (markers.length > 1) {
+                        console.log(`⚠️ SUPERPOSITION détectée à ${pos}: ${markers.length} marqueurs`);
+                    }
+                });
                 
                 // Vérifier si les marqueurs de test sont visibles
                 if (testMarkerParis) {
@@ -857,22 +873,21 @@ $processedData = processData($rawData);
             // Ajuster la vue de la carte pour inclure tous les marqueurs
             console.log(`📊 Total marqueurs créés: ${markersAdded + 2} (${markersAdded} sessions + 2 tests)`);
             
-            if (markersAdded > 0) {
-                console.log(`🗺️ Ajustement de la vue pour ${markersAdded} marqueurs`);
-                const group = new L.featureGroup();
-                map.eachLayer(function(layer) {
-                    if (layer instanceof L.Marker) {
-                        group.addLayer(layer);
-                    }
-                });
-                console.log(`🗺️ Marqueurs trouvés sur la carte: ${group.getLayers().length}`);
-                
-                if (group.getLayers().length > 0) {
-                    map.fitBounds(group.getBounds().pad(0.1));
-                    console.log(`🗺️ Vue ajustée pour ${group.getLayers().length} marqueurs`);
-                } else {
-                    console.warn('⚠️ Aucun marqueur trouvé pour ajuster la vue');
+            // Toujours ajuster la vue pour inclure tous les marqueurs (tests + sessions)
+            console.log(`🗺️ Ajustement de la vue pour tous les marqueurs`);
+            const group = new L.featureGroup();
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.Marker) {
+                    group.addLayer(layer);
                 }
+            });
+            console.log(`🗺️ Marqueurs trouvés sur la carte: ${group.getLayers().length}`);
+            
+            if (group.getLayers().length > 0) {
+                map.fitBounds(group.getBounds().pad(0.1));
+                console.log(`🗺️ Vue ajustée pour ${group.getLayers().length} marqueurs`);
+            } else {
+                console.warn('⚠️ Aucun marqueur trouvé pour ajuster la vue');
             }
         }
 
