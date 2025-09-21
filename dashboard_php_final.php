@@ -771,6 +771,11 @@ $processedData = processData($rawData);
                     <strong>IP:</strong> ${session.client_ip}
                 `);
             markersAdded++;
+            
+            // Debug spécial pour les sessions du 07/09
+            if (session.timestamp && session.timestamp.includes('2025-09-07')) {
+                console.log(`✅ MARQUEUR 07/09 AJOUTÉ À LA CARTE: ${session.session_id}`);
+            }
         });
         
         // Afficher un message si des sessions n'ont pas de coordonnées
@@ -780,6 +785,7 @@ $processedData = processData($rawData);
         
         // Ajuster la vue de la carte pour inclure tous les marqueurs
         if (markersAdded > 0) {
+            console.log(`🗺️ Ajustement de la vue pour ${markersAdded} marqueurs`);
             const group = new L.featureGroup();
             map.eachLayer(function(layer) {
                 if (layer instanceof L.Marker) {
@@ -788,6 +794,9 @@ $processedData = processData($rawData);
             });
             if (group.getLayers().length > 0) {
                 map.fitBounds(group.getBounds().pad(0.1));
+                console.log(`🗺️ Vue ajustée pour ${group.getLayers().length} marqueurs`);
+            } else {
+                console.warn('⚠️ Aucun marqueur trouvé pour ajuster la vue');
             }
         }
 
