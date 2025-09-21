@@ -155,7 +155,7 @@ function processData($data) {
         }
     }
     
-    // Créer des sessions à partir des clics (pour capturer toutes les sessions)
+    // CORRECTION : Ajouter les sessions manquantes à partir des clics
     foreach ($clicks as $click) {
         $sessionId = $click['session_id'];
         if (!isset($sessionMap[$sessionId])) {
@@ -173,8 +173,19 @@ function processData($data) {
                 'click_count' => 0,
                 'is_from_click' => true
             ];
+        } else {
+            // Mettre à jour les coordonnées si elles sont meilleures
+            if (($click['latitude'] ?? 0) != 0 && ($click['longitude'] ?? 0) != 0) {
+                $sessionMap[$sessionId]['latitude'] = $click['latitude'];
+                $sessionMap[$sessionId]['longitude'] = $click['longitude'];
+                $sessionMap[$sessionId]['city'] = $click['city'] ?? $sessionMap[$sessionId]['city'];
+                $sessionMap[$sessionId]['country'] = $click['country'] ?? $sessionMap[$sessionId]['country'];
+            }
         }
     }
+    
+    // Debug : Afficher le nombre de sessions trouvées
+    echo "<!-- DEBUG: " . count($sessionMap) . " sessions trouvées -->\n";
     
     // Calculer les statistiques
     $stats = [
