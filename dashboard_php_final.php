@@ -747,15 +747,24 @@ $processedData = processData($rawData);
         });
         
         function addMarkersToMap() {
-            // Ajouter un marqueur de test pour vérifier que la carte fonctionne
-            console.log('🧪 Création du marqueur de test...');
-            const testMarker = L.marker([48.8566, 2.3522])
+            // Ajouter des marqueurs de test pour vérifier que la carte fonctionne
+            console.log('🧪 Création des marqueurs de test...');
+            
+            // Marqueur de test à Paris
+            const testMarkerParis = L.marker([48.8566, 2.3522])
                 .addTo(map)
                 .bindPopup('🧪 MARQUEUR DE TEST - Paris');
-            console.log('🧪 Marqueur de test créé:', testMarker);
-            console.log('🧪 Marqueur de test ajouté à Paris');
+            console.log('🧪 Marqueur de test Paris créé:', testMarkerParis);
             
-            // Vérifier si le marqueur est sur la carte
+            // Marqueur de test à Bordeaux
+            const testMarkerBordeaux = L.marker([44.8378, -0.5792])
+                .addTo(map)
+                .bindPopup('🧪 MARQUEUR DE TEST - Bordeaux');
+            console.log('🧪 Marqueur de test Bordeaux créé:', testMarkerBordeaux);
+            
+            console.log('🧪 Marqueurs de test ajoutés à Paris et Bordeaux');
+            
+            // Vérifier si les marqueurs sont sur la carte
             setTimeout(function() {
                 const allMarkers = [];
                 map.eachLayer(function(layer) {
@@ -766,11 +775,17 @@ $processedData = processData($rawData);
                 console.log('🧪 Marqueurs sur la carte:', allMarkers.length);
                 console.log('🧪 Marqueurs:', allMarkers);
                 
-                // Vérifier si le marqueur de test est visible
-                if (testMarker) {
-                    console.log('🧪 Marqueur de test existe:', testMarker);
-                    console.log('🧪 Position marqueur test:', testMarker.getLatLng());
-                    console.log('🧪 Marqueur test visible:', map.hasLayer(testMarker));
+                // Vérifier si les marqueurs de test sont visibles
+                if (testMarkerParis) {
+                    console.log('🧪 Marqueur Paris existe:', testMarkerParis);
+                    console.log('🧪 Position marqueur Paris:', testMarkerParis.getLatLng());
+                    console.log('🧪 Marqueur Paris visible:', map.hasLayer(testMarkerParis));
+                }
+                
+                if (testMarkerBordeaux) {
+                    console.log('🧪 Marqueur Bordeaux existe:', testMarkerBordeaux);
+                    console.log('🧪 Position marqueur Bordeaux:', testMarkerBordeaux.getLatLng());
+                    console.log('🧪 Marqueur Bordeaux visible:', map.hasLayer(testMarkerBordeaux));
                 }
             }, 500);
             
@@ -840,7 +855,7 @@ $processedData = processData($rawData);
             }
             
             // Ajuster la vue de la carte pour inclure tous les marqueurs
-            console.log(`📊 Total marqueurs créés: ${markersAdded + 1} (${markersAdded} sessions + 1 test)`);
+            console.log(`📊 Total marqueurs créés: ${markersAdded + 2} (${markersAdded} sessions + 2 tests)`);
             
             if (markersAdded > 0) {
                 console.log(`🗺️ Ajustement de la vue pour ${markersAdded} marqueurs`);
