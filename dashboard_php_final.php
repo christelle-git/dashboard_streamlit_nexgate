@@ -721,10 +721,21 @@ $processedData = processData($rawData);
         // Attendre que la carte soit prête avant d'ajouter les marqueurs
         map.whenReady(function() {
             console.log('🗺️ Carte prête, ajout des marqueurs...');
+            
+            // Forcer le zoom sur la France
+            map.setView([46.0, 2.0], 6);
+            console.log('🗺️ Vue forcée sur la France');
+            
             addMarkersToMap();
         });
         
         function addMarkersToMap() {
+            // Ajouter un marqueur de test pour vérifier que la carte fonctionne
+            const testMarker = L.marker([48.8566, 2.3522])
+                .addTo(map)
+                .bindPopup('🧪 MARQUEUR DE TEST - Paris');
+            console.log('🧪 Marqueur de test ajouté à Paris');
+            
             // Ajouter les marqueurs des sessions
             let markersAdded = 0;
             let sessionsWithoutCoords = 0;
@@ -791,6 +802,8 @@ $processedData = processData($rawData);
             }
             
             // Ajuster la vue de la carte pour inclure tous les marqueurs
+            console.log(`📊 Total marqueurs créés: ${markersAdded + 1} (${markersAdded} sessions + 1 test)`);
+            
             if (markersAdded > 0) {
                 console.log(`🗺️ Ajustement de la vue pour ${markersAdded} marqueurs`);
                 const group = new L.featureGroup();
@@ -799,6 +812,8 @@ $processedData = processData($rawData);
                         group.addLayer(layer);
                     }
                 });
+                console.log(`🗺️ Marqueurs trouvés sur la carte: ${group.getLayers().length}`);
+                
                 if (group.getLayers().length > 0) {
                     map.fitBounds(group.getBounds().pad(0.1));
                     console.log(`🗺️ Vue ajustée pour ${group.getLayers().length} marqueurs`);
