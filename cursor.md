@@ -2,6 +2,22 @@
 
 ## 📅 Session du 1er septembre 2025
 
+## 🚀 **INSTRUCTION POUR LA PROCHAINE SESSION :**
+
+**Lorsque vous rouvrez Cursor, demandez à l'IA :**
+> "Lis le fichier cursor.md et dis-moi exactement où on en était et quelles sont les prochaines étapes."
+
+**L'IA devra :**
+1. Lire ce fichier `cursor.md`
+2. Comprendre le contexte complet de la session
+3. Identifier où nous en étions
+4. Proposer les prochaines étapes concrètes
+5. Être prête à continuer le travail immédiatement
+
+---
+
+## 📋 **CONTEXTE DE LA SESSION :**
+
 ### 🎯 **Objectif initial :**
 Corriger le problème des sessions manquantes dans le dashboard de tracking analytics, notamment la session de votre amie du 16 août qui n'était pas détectée.
 
@@ -113,7 +129,54 @@ git diff HEAD~1
 ### 🎉 **Statut :**
 **Problème résolu !** Le système de tracking fonctionne maintenant correctement et toutes les sessions seront détectées, y compris celles sans clics.
 
+## 💬 **DERNIERS MESSAGES DE L'IA :**
+
+### **Dernier message principal :**
+> "Parfait ! ✅ **Fichier `cursor.md` créé et commité !**
+> 
+> ## 📋 **Résumé de ce qui est maintenant sauvegardé :**
+> 
+> ### **Dans `cursor.md` :**
+> - 🎯 **Objectif initial** et problème identifié
+> - ✅ **Solutions implémentées** (tracker, dashboard, déploiement)
+> - 📁 **Fichiers créés/modifiés** avec descriptions
+> - 🏗️ **Architecture** de votre hébergement
+> - 🎯 **Prochaines étapes** détaillées
+> - 🔧 **Commandes Git** utiles
+> - 🚨 **Points importants** et dépannage
+> - 🎉 **Statut final** : problème résolu
+> 
+> ### **Quand vous rouvrirez Cursor :**
+> 1. **Lisez `cursor.md`** pour retrouver le contexte
+> 2. **Consultez la documentation** (`DOCUMENTATION_DASHBOARD_TRACKING.md`)
+> 3. **Vérifiez l'historique Git** avec `git log --oneline -5`
+> 4. **Reprenez** aux prochaines étapes indiquées
+> 
+> ### **Prochaines étapes principales :**
+> 1. **Uploader** `dashboard_php.php` sur Nexgate via Web-FTP
+> 2. **Tester** le dashboard : `https://christellelusso.nexgate.ch/dashboard_php.php`
+> 3. **Mettre à jour** votre site avec `index_updated.html`
+> 
+> Vous pouvez maintenant fermer Cursor en toute sécurité ! Tout est sauvegardé et documenté. 🎉"
+
+### **Contexte de la fin de session :**
+- L'utilisateur a demandé de créer `cursor.md` pour retrouver le contexte
+- L'IA a créé un résumé complet de la session
+- L'utilisateur a demandé d'adapter le fichier pour la prochaine session
+- L'IA est en train de finaliser cette adaptation
+
+## 🔄 **ÉTAT EXACT DE LA SESSION :**
+
+### **Dernière action :**
+- Création et adaptation du fichier `cursor.md`
+- Commit en cours : `a95cee3` - Ajout du fichier cursor.md avec résumé de session
+
+### **Prochaine action immédiate :**
+- Finaliser l'adaptation de `cursor.md`
+- Commiter les changements
+- Confirmer que tout est prêt pour la prochaine session
+
 ---
 
 **Dernière mise à jour :** 1er septembre 2025  
-**Commit actuel :** `7c723d6` - Clarifications et améliorations de la documentation
+**Commit actuel :** `a95cee3` - Ajout du fichier cursor.md avec résumé de session
