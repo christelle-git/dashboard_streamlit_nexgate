@@ -808,6 +808,7 @@ $processedData = processData($rawData);
             // Ajouter les marqueurs des sessions
             let markersAdded = 0;
             let sessionsWithoutCoords = 0;
+            const usedPositions = new Map(); // Pour éviter les superpositions
             
             sessions.forEach(session => {
             let lat = session.latitude;
@@ -845,8 +846,25 @@ $processedData = processData($rawData);
                 console.log(`🎯 MARQUEUR 07/09 CRÉÉ: ${session.session_id} à [${lat}, ${lng}]`);
             }
             
+            // Appliquer un décalage si la position est déjà utilisée
+            let finalLat = lat;
+            let finalLng = lng;
+            const positionKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+            
+            if (usedPositions.has(positionKey)) {
+                const count = usedPositions.get(positionKey);
+                // Décalage en spirale pour éviter les superpositions
+                const angle = count * 0.1; // 0.1 radian par marqueur
+                const radius = 0.001 * (count + 1); // 0.001 degré par marqueur
+                finalLat = lat + radius * Math.cos(angle);
+                finalLng = lng + radius * Math.sin(angle);
+                console.log(`🔄 Décalage appliqué à ${session.session_id}: [${lat}, ${lng}] -> [${finalLat.toFixed(6)}, ${finalLng.toFixed(6)}]`);
+            }
+            
+            usedPositions.set(positionKey, (usedPositions.get(positionKey) || 0) + 1);
+            
             // Toujours afficher la session sur la carte
-            const marker = L.marker([lat, lng])
+            const marker = L.marker([finalLat, finalLng])
                 .addTo(map)
                 .bindPopup(`
                     <strong>Session ${session.session_id}</strong><br>
