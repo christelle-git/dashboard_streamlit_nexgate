@@ -13,11 +13,32 @@ $ANALYTICS_DATA_URL = 'https://christellelusso.nexgate.ch/analytics_data.json';
 $CACHE_DURATION = 300; // 5 minutes
 $CACHE_FILE = 'analytics_cache.json';
 
-// Fonction pour personnaliser l'IP fixe
+// Fonction pour personnaliser l'IP fixe et corriger les pays
 function customizeIP($ip, $country, $city) {
     if ($ip === '82.66.151.2') {
         return ['country' => 'France', 'city' => 'MOI'];
     }
+    
+    // Corriger les pays basés sur les villes
+    $cityCountryMap = [
+        'Mountain View' => 'États-Unis',
+        'Seocho-gu' => 'Corée du Sud',
+        'Seoul' => 'Corée du Sud',
+        'San Francisco' => 'États-Unis',
+        'New York' => 'États-Unis',
+        'London' => 'Royaume-Uni',
+        'Paris' => 'France',
+        'Berlin' => 'Allemagne',
+        'Tokyo' => 'Japon',
+        'Sydney' => 'Australie'
+    ];
+    
+    foreach ($cityCountryMap as $cityName => $correctCountry) {
+        if (stripos($city, $cityName) !== false) {
+            return ['country' => $correctCountry, 'city' => $city];
+        }
+    }
+    
     return ['country' => $country, 'city' => $city];
 }
 
@@ -500,7 +521,7 @@ $processedData = processData($rawData);
                                                     <td><?php echo htmlspecialchars($journey['city']); ?></td>
                                                     <td><?php echo htmlspecialchars($journey['journey']); ?></td>
                                                     <td><?php echo htmlspecialchars($journey['files']); ?></td>
-                                                    <td><span class="badge bg-info"><?php echo $journey['click_count']; ?></span></td>
+                                                    <td><?php echo $journey['click_count']; ?></td>
                                                     <td><?php echo $journey['duration']; ?></td>
                                                 </tr>
                                                 <?php endforeach; ?>
@@ -533,6 +554,7 @@ $processedData = processData($rawData);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         // Ajouter les marqueurs des sessions
+        let markersAdded = 0;
         sessions.forEach(session => {
             if (session.latitude && session.longitude && session.latitude != 0 && session.longitude != 0) {
                 const marker = L.marker([session.latitude, session.longitude])
@@ -544,8 +566,22 @@ $processedData = processData($rawData);
                         Ville: ${session.city}<br>
                         Clics: ${session.click_count || 0}
                     `);
+                markersAdded++;
             }
         });
+        
+        // Ajuster la vue de la carte pour inclure tous les marqueurs
+        if (markersAdded > 0) {
+            const group = new L.featureGroup();
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.Marker) {
+                    group.addLayer(layer);
+                }
+            });
+            if (group.getLayers().length > 0) {
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
 
         // Graphique des pays
         const countryCtx = document.getElementById('countryChart').getContext('2d');
