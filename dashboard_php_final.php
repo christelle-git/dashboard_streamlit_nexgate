@@ -632,7 +632,9 @@ $processedData = processData($rawData);
             'Mountain View': [37.3861, -122.0839],
             'Seocho-gu': [37.4945, 127.0276],
             'Seoul': [37.5665, 126.9780],
-            'Houilles': [48.9226, 2.1850]
+            'Houilles': [48.9226, 2.1850],
+            'Paris (IP)': [48.8566, 2.3522],
+            'Sartrouville (IP)': [48.9442, 2.1917]
         };
         
         // Ajouter les marqueurs des sessions
@@ -649,26 +651,34 @@ $processedData = processData($rawData);
                 if (cityCoords[cityName]) {
                     lat = cityCoords[cityName][0];
                     lng = cityCoords[cityName][1];
+                } else if (cityCoords[session.city]) {
+                    // Essayer avec le nom complet de la ville
+                    lat = cityCoords[session.city][0];
+                    lng = cityCoords[session.city][1];
+                } else {
+                    // Coordonnées par défaut pour la France si pas trouvé
+                    lat = 48.8566;
+                    lng = 2.3522;
                 }
             }
             
-            if (lat && lng && lat !== 0 && lng !== 0) {
-                const marker = L.marker([lat, lng])
-                    .addTo(map)
-                    .bindPopup(`
-                        <strong>Session ${session.session_id}</strong><br>
-                        <strong>Date:</strong> ${new Date(session.timestamp).toLocaleString()}<br>
-                        <strong>Pays:</strong> ${session.country}<br>
-                        <strong>Ville:</strong> ${session.city}<br>
-                        <strong>Clics:</strong> ${session.click_count || 0}<br>
-                        <strong>Durée:</strong> ${session.session_duration ? (session.session_duration/1000).toFixed(1) + 's' : '0s'}<br>
-                        <strong>IP:</strong> ${session.client_ip}
-                    `);
-                markersAdded++;
-            } else {
-                sessionsWithoutCoords++;
-                // Afficher dans la console pour debug
-                console.log(`Session sans coordonnées: ${session.session_id} - ${session.city}, ${session.country}`);
+            // Toujours afficher la session sur la carte
+            const marker = L.marker([lat, lng])
+                .addTo(map)
+                .bindPopup(`
+                    <strong>Session ${session.session_id}</strong><br>
+                    <strong>Date:</strong> ${new Date(session.timestamp).toLocaleString()}<br>
+                    <strong>Pays:</strong> ${session.country}<br>
+                    <strong>Ville:</strong> ${session.city}<br>
+                    <strong>Clics:</strong> ${session.click_count || 0}<br>
+                    <strong>Durée:</strong> ${session.session_duration ? (session.session_duration/1000).toFixed(1) + 's' : '0s'}<br>
+                    <strong>IP:</strong> ${session.client_ip}
+                `);
+            markersAdded++;
+            
+            // Debug pour les sessions sans coordonnées GPS originales
+            if (!session.latitude || !session.longitude || session.latitude === 0 || session.longitude === 0) {
+                console.log(`Session avec coordonnées déduites: ${session.session_id} - ${session.city}, ${session.country} → [${lat}, ${lng}]`);
             }
         });
         
