@@ -2,7 +2,13 @@
 // Script pour vérifier les nouvelles sessions et envoyer des alertes
 header('Content-Type: application/json');
 
-// Système d'alerte activé avec limitation
+// 🚨 URGENT : DÉSACTIVATION COMPLÈTE DU SYSTÈME D'ALERTE
+echo json_encode([
+    'success' => true,
+    'message' => 'Système d\'alerte COMPLÈTEMENT désactivé - Plus d\'emails envoyés',
+    'status' => 'DISABLED_PERMANENTLY'
+]);
+exit;
 
 // Fichier pour stocker les sessions déjà notifiées
 $notifiedFile = 'notified_sessions.json';
