@@ -12,6 +12,15 @@
     Deny from all
 </Files>
 
+# Améliorer l'indexation
+<Files "sitemap.xml">
+    Header set Content-Type "application/xml"
+    Header set Cache-Control "public, max-age=3600"
+</Files>
+
+# Redirection pour la page d'accueil
+DirectoryIndex index.html
+
 # Empêcher l'accès aux fichiers de configuration
 <Files ".htpasswd">
     Order Deny,Allow
