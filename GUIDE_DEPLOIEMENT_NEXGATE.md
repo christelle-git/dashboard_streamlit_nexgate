@@ -174,6 +174,40 @@ RewriteRule ^dashboard$ dashboard_php.php [L]
 </Files>
 ```
 
+### **Particularité Nexgate : fichier htaccess sans point**
+
+Sur l'interface Web‑FTP de Nexgate, les fichiers commençant par un point peuvent être renommés automatiquement sans le point. Si vous voyez `htaccess` au lieu de `.htaccess`, c'est normal et le fichier reste pris en compte par Apache chez Nexgate. Vous pouvez donc uploader l'un ou l'autre, avec le même contenu.
+
+### **Personnalisation IP fixe (ville = MOI)**
+
+Le dashboard force l'adresse IP `82.66.151.2` à s'afficher en:
+- **Pays**: France
+- **Ville**: MOI
+
+Cette personnalisation est appliquée à tous les événements (début/fin de session, clics) et réappliquée en fin de traitement pour éviter tout écrasement.
+
+### **Alerte email anti‑boucle (session_start uniquement)**
+
+Un service PHP simple permet d'envoyer un email récapitulatif unique lorsqu'une ou plusieurs nouvelles sessions (événements `session_start`) sont détectées:
+
+Endpoints utilisés:
+- `check_new_sessions.php` (détection + envoi via `send_alert.php`)
+- `send_alert.php` (formatage et envoi de l'email)
+
+Sécurité anti‑boucle intégrée:
+- **Cooldown**: 10 minutes entre deux envois (fichier `last_check.json`)
+- **Déduplication**: `notified_sessions.json` mémorise les `session_id` déjà notifiés
+- **Filtre IP**: l'IP `82.66.151.2` est ignorée
+- **Résumé unique**: un seul email pour toutes les nouvelles sessions détectées dans l'intervalle
+
+Déclenchement conseillé:
+- Manuellement (visite de `check_new_sessions.php`)
+- Via un service d'appel planifié externe (par ex. cron d'un autre serveur ou un scheduler en ligne)
+
+Important SEO:
+- L'endpoint est léger (une requête toutes 10 minutes max)
+- Garder `robots.txt` avec `Disallow` sur les endpoints d'alerte et le dashboard
+
 ### **Mise à jour des données**
 
 Le dashboard PHP se met à jour automatiquement :

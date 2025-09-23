@@ -1,15 +1,36 @@
 <?php
-// Script pour vérifier les nouvelles sessions et envoyer des alertes
+// Script pour vérifier les nouvelles sessions (session_start) et envoyer UNE alerte récapitulative
 header('Content-Type: application/json');
 
-// 🚨 URGENT : DÉSACTIVATION COMPLÈTE POUR ÉVITER LE DÉRÉFÉRENCEMENT
-echo json_encode([
-    'success' => false,
-    'message' => 'Système d\'alerte DÉSACTIVÉ pour éviter le déréférencement',
-    'status' => 'DISABLED_FOR_SEO',
-    'reason' => 'Protection contre le déréférencement Google'
-]);
-exit;
+// Configuration
+$DATA_URL = 'https://christellelusso.nexgate.ch/analytics_data.json';
+$FIXED_IP = '82.66.151.2';
+// Cooldown par défaut 10 min, mais personnalisable par ?cooldown=SECONDES (borné 60..3600)
+$COOLDOWN_SECONDS = 600; // 10 minutes par défaut (sécurité SEO)
+if (isset($_GET['cooldown'])) {
+    $cd = intval($_GET['cooldown']);
+    if ($cd >= 60 && $cd <= 3600) { $COOLDOWN_SECONDS = $cd; }
+}
+// Fenêtre temporelle personnalisable ?window_hours=H (bornée 1..48)
+$WINDOW_HOURS = 24; // fenêtre d'observation
+if (isset($_GET['window_hours'])) {
+    $wh = intval($_GET['window_hours']);
+    if ($wh >= 1 && $wh <= 48) { $WINDOW_HOURS = $wh; }
+}
+// Mode test: inclure l'IP fixe si ?include_my_ip=1
+$INCLUDE_FIXED_IP_FOR_TEST = isset($_GET['include_my_ip']) && $_GET['include_my_ip'] == '1';
+
+// Fichiers d'état
+$notifiedFile = 'notified_sessions.json';
+$lastCheckFile = 'last_check.json';
+$lockFile = 'alerts.lock';
+
+// Verrouillage simple pour éviter les appels concurrents
+$lockHandle = fopen($lockFile, 'c+');
+if ($lockHandle !== false && !flock($lockHandle, LOCK_EX | LOCK_NB)) {
+    echo json_encode(['success' => false, 'message' => 'Vérification déjà en cours']);
+    exit;
+}
 
 // Fichier pour stocker les sessions déjà notifiées
 $notifiedFile = 'notified_sessions.json';
@@ -38,7 +59,7 @@ if (file_exists($notifiedFile)) {
 }
 
 // Récupérer toutes les sessions
-$data = json_decode(file_get_contents('https://christellelusso.nexgate.ch/analytics_data.json'), true);
+$data = json_decode(file_get_contents($DATA_URL), true);
 
 if (!$data) {
     http_response_code(500);
@@ -46,9 +67,12 @@ if (!$data) {
     exit;
 }
 
-// Filtrer les sessions externes (pas notre IP)
-$externalSessions = array_filter($data, function($session) {
-    return isset($session['client_ip']) && $session['client_ip'] !== '82.66.151.2';
+// Filtrer: seulement session_start; exclure IP fixe sauf en mode test
+$externalSessions = array_filter($data, function($event) use ($FIXED_IP, $INCLUDE_FIXED_IP_FOR_TEST) {
+    if (!isset($event['type']) || $event['type'] !== 'session_start') return false;
+    if (!isset($event['client_ip'])) return false;
+    if ($INCLUDE_FIXED_IP_FOR_TEST) return true; // autoriser pour les tests manuels
+    return $event['client_ip'] !== $FIXED_IP;
 });
 
 // Grouper par session_id
@@ -67,13 +91,11 @@ foreach ($externalSessions as $event) {
 
 // Vérifier les nouvelles sessions (seulement celles des dernières 24h)
 $newSessions = [];
-$yesterday = date('Y-m-d', strtotime('-1 day'));
+$yesterdayTs = time() - ($WINDOW_HOURS * 3600);
 
 foreach ($sessions as $sessionId => $session) {
-    // Vérifier si la session est récente (dernières 24h)
-    $sessionDate = date('Y-m-d', strtotime($session['timestamp']));
-    
-    if ($sessionDate >= $yesterday && !in_array($sessionId, $notifiedSessions)) {
+    $sessionTs = strtotime($session['timestamp']);
+    if ($sessionTs !== false && $sessionTs >= $yesterdayTs && !in_array($sessionId, $notifiedSessions)) {
         $newSessions[] = $session;
         $notifiedSessions[] = $sessionId;
     }
@@ -117,7 +139,7 @@ if (count($newSessions) > 0) {
     curl_close($ch);
     
     $debugInfo[] = "CURL HTTP Code: " . $httpCode;
-    $debugInfo[] = "CURL Result: " . substr($result, 0, 100);
+    $debugInfo[] = "CURL Result: " . substr((string)$result, 0, 100);
     
     if ($httpCode === 200) {
         $alertsSent = 1; // Un seul email envoyé
@@ -129,6 +151,8 @@ if (count($newSessions) > 0) {
     $debugInfo[] = "Aucune nouvelle session détectée";
 }
 
+if ($lockHandle) { flock($lockHandle, LOCK_UN); fclose($lockHandle); }
+
 echo json_encode([
     'success' => true,
     'new_sessions' => count($newSessions),
@@ -137,6 +161,7 @@ echo json_encode([
     'message' => "$alertsSent email(s) de résumé envoyé(s) pour " . count($newSessions) . " nouvelle(s) session(s).",
     'debug' => $debugInfo,
     'timestamp' => date('Y-m-d H:i:s'),
-    'protection' => '30 minutes entre les vérifications'
+    'cooldown_minutes' => $COOLDOWN_SECONDS / 60,
+    'include_fixed_ip_for_test' => $INCLUDE_FIXED_IP_FOR_TEST
 ]);
 ?>

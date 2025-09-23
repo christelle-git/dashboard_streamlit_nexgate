@@ -7,7 +7,7 @@
 - `tracker_v6_improved.js` → **Racine** de votre site
 
 ### **Fichiers de protection :**
-- `.htaccess` → **Racine** de votre site
+- `.htaccess` → **Racine** de votre site (chez Nexgate il peut apparaître comme `htaccess` sans le point)
 - `.htpasswd` → **Racine** de votre site
 
 ## 🔧 Étapes d'upload
@@ -19,11 +19,13 @@
 
 ### **2. Upload des fichiers :**
 1. **Sélectionnez** le dossier racine (où est `index.html`)
-2. **Uploadez** les 4 fichiers :
+2. **Uploadez** les fichiers :
    - `dashboard_php.php`
    - `tracker_v6_improved.js`
-   - `.htaccess`
+   - `.htaccess` (ou `htaccess` selon Web‑FTP)
    - `.htpasswd`
+   - `check_new_sessions.php`
+   - `send_alert.php`
 
 ### **3. Vérification :**
 - Vérifiez que tous les fichiers sont présents
@@ -58,6 +60,7 @@ https://christellelusso.nexgate.ch/dashboard_php.php
 
 ### **Si le pop-up n'apparaît pas :**
 - Vérifiez que `.htaccess` est bien uploadé
+- Chez Nexgate, le fichier peut s'afficher comme `htaccess` sans point: c'est acceptable
 - Vérifiez que `.htpasswd` est bien uploadé
 - Vérifiez les permissions des fichiers
 
@@ -65,6 +68,14 @@ https://christellelusso.nexgate.ch/dashboard_php.php
 - Vérifiez le nom d'utilisateur : `admin`
 - Vérifiez le mot de passe
 - Vérifiez que `.htpasswd` est dans le bon dossier
+
+## ✉️ Tester l'alerte email (anti-boucle)
+
+1. Ouvrez `https://christellelusso.nexgate.ch/check_new_sessions.php`
+2. Si de nouvelles `session_start` (hors IP fixe) sont présentes depuis les 24 dernières heures, un **email récapitulatif unique** est envoyé.
+3. Le script applique un **cooldown de 10 minutes** et ne renvoie pas deux fois la même session (`notified_sessions.json`).
+
+Astuce: pour un test immédiat, créez une session externe (mobile 4G, navigation privée).
 
 ## 📞 Support
 
