@@ -15,7 +15,10 @@ $CACHE_FILE = 'analytics_cache.json';
 
 // Fonction pour personnaliser l'IP fixe et corriger les pays
 function customizeIP($ip, $country, $city) {
-    if ($ip === '82.66.151.2') {
+    // Normaliser l'IP (trim + suppression d'éventuels caractères parasites)
+    $ipNormalized = trim((string)$ip);
+    // Forcer la personnalisation pour l'IP fixe, même si l'IP est incluse dans une chaîne plus large
+    if ($ipNormalized === '82.66.151.2' || strpos($ipNormalized, '82.66.151.2') !== false) {
         return ['country' => 'France', 'city' => 'MOI'];
     }
     
@@ -178,10 +181,24 @@ function processData($data) {
             if (($click['latitude'] ?? 0) != 0 && ($click['longitude'] ?? 0) != 0) {
                 $sessionMap[$sessionId]['latitude'] = $click['latitude'];
                 $sessionMap[$sessionId]['longitude'] = $click['longitude'];
-                $sessionMap[$sessionId]['city'] = $click['city'] ?? $sessionMap[$sessionId]['city'];
-                $sessionMap[$sessionId]['country'] = $click['country'] ?? $sessionMap[$sessionId]['country'];
+                // Ne jamais écraser la personnalisation de l'IP fixe
+                $custom = customizeIP($sessionMap[$sessionId]['client_ip'] ?? '', $sessionMap[$sessionId]['country'] ?? '', $sessionMap[$sessionId]['city'] ?? '');
+                if ($custom['city'] === 'MOI') {
+                    $sessionMap[$sessionId]['city'] = 'MOI';
+                    $sessionMap[$sessionId]['country'] = 'France';
+                } else {
+                    $sessionMap[$sessionId]['city'] = $click['city'] ?? $sessionMap[$sessionId]['city'];
+                    $sessionMap[$sessionId]['country'] = $click['country'] ?? $sessionMap[$sessionId]['country'];
+                }
             }
         }
+    }
+
+    // Réappliquer la personnalisation IP sur toutes les sessions
+    foreach ($sessionMap as $sid => $sess) {
+        $ipCustom = customizeIP($sess['client_ip'] ?? '', $sess['country'] ?? '', $sess['city'] ?? '');
+        $sessionMap[$sid]['country'] = $ipCustom['country'];
+        $sessionMap[$sid]['city'] = $ipCustom['city'];
     }
     
     // Debug : Afficher le nombre de sessions trouvées
