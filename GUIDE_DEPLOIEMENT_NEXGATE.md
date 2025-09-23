@@ -208,6 +208,15 @@ Important SEO:
 - L'endpoint est léger (une requête toutes 10 minutes max)
 - Garder `robots.txt` avec `Disallow` sur les endpoints d'alerte et le dashboard
 
+Paramètres d'URL utiles (pour tests contrôlés):
+- `?cooldown=SECONDES` (bornes 60..3600) ex: `?cooldown=120`
+- `?window_hours=H` (bornes 1..48) ex: `?window_hours=6`
+- `?include_my_ip=1` pour inclure temporairement l'IP fixe dans la détection
+
+Exemples:
+- Production prudente: `https://christellelusso.nexgate.ch/check_new_sessions.php`
+- Test rapide: `https://christellelusso.nexgate.ch/check_new_sessions.php?include_my_ip=1&cooldown=120`
+
 ### **Mise à jour des données**
 
 Le dashboard PHP se met à jour automatiquement :

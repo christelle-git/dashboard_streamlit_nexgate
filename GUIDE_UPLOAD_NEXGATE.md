@@ -72,10 +72,11 @@ https://christellelusso.nexgate.ch/dashboard_php.php
 ## ✉️ Tester l'alerte email (anti-boucle)
 
 1. Ouvrez `https://christellelusso.nexgate.ch/check_new_sessions.php`
-2. Si de nouvelles `session_start` (hors IP fixe) sont présentes depuis les 24 dernières heures, un **email récapitulatif unique** est envoyé.
-3. Le script applique un **cooldown de 10 minutes** et ne renvoie pas deux fois la même session (`notified_sessions.json`).
+2. Pour tester plus vite: `?cooldown=120` (2 minutes) et/ou `?include_my_ip=1`
+3. Si de nouvelles `session_start` (hors IP fixe sauf si `include_my_ip=1`) sont présentes dans la fenêtre (`window_hours` par défaut 24h), un **email récapitulatif unique** est envoyé.
+4. Le script applique un **cooldown** (par défaut 10 minutes, paramétrable) et ne renvoie pas deux fois la même session (`notified_sessions.json`).
 
-Astuce: pour un test immédiat, créez une session externe (mobile 4G, navigation privée).
+Astuce: pour un test immédiat, créez une session externe (mobile 4G) puis appelez `check_new_sessions.php?cooldown=120`.
 
 ## 📞 Support
 
