@@ -225,7 +225,11 @@ Streamlit Cloud → https://christellelusso.nexgate.ch/analytics_data.json (prio
 **Synchronisation du miroir** :
 - **Workflow GitHub Actions** : Synchronisation quotidienne à 06:00 UTC
 - **Fréquence** : 1 fois/jour (évite la surcharge Nexgate)
-- **Déclenchement manuel** : Possible via l'interface GitHub Actions
+- **Déclenchement manuel** : 
+  1. Aller sur https://github.com/christelle-git/dashboard_streamlit_nexgate/actions
+  2. Sélectionner "Sync analytics_data.json from Nexgate"
+  3. Cliquer sur "Run workflow" → "streamlit-deploy" → "Run workflow"
+  4. Attendre 1-2 minutes que le workflow se termine
 
 **Avantages** :
 - Résilience : fonctionne même si Nexgate est temporairement indisponible
