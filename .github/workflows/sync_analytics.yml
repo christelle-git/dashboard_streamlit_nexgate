@@ -1,0 +1,42 @@
+name: Sync analytics_data.json from Nexgate
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # toutes les 15 minutes
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download analytics_data.json from Nexgate (HTTPS)
+        run: |
+          set -e
+          curl -fSL --max-time 20 https://christellelusso.nexgate.ch/analytics_data.json -o analytics_data.json.new || echo "download_failed=1" >> $GITHUB_ENV
+
+      - name: Fallback to HTTP if HTTPS failed
+        if: env.download_failed == '1'
+        run: |
+          set -e
+          curl -fSL --max-time 20 http://christellelusso.nexgate.ch/analytics_data.json -o analytics_data.json.new
+
+      - name: Commit if file changed
+        run: |
+          set -e
+          if ! cmp -s analytics_data.json.new analytics_data.json 2>/dev/null; then
+            mv analytics_data.json.new analytics_data.json
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add analytics_data.json
+            git commit -m "chore: sync analytics_data.json from Nexgate"
+            git push
+          else
+            echo "No changes to commit"
+          fi
+
