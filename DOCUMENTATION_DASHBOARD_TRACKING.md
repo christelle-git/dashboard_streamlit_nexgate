@@ -137,6 +137,32 @@ export ANALYTICS_DATA_URL=https://christellelusso.nexgate.ch/analytics_data.json
 | **Complexité** | Simple | Moyenne | Complexe |
 | **Contrôle** | Limité | Moyen | Total |
 
+### **Déploiement Streamlit Cloud via branche orpheline (recommandé pour partage rapide)**
+
+Objectif: publier une web app minimale sans exposer tout le dépôt.
+
+Étapes synthétiques:
+
+1. Créer une branche orpheline locale (sans historique):
+```
+git switch --orphan streamlit-deploy
+```
+2. Ajouter seulement les fichiers requis (exemples):
+```
+git add -f dashboard.py requirements.txt .streamlit/config.toml
+git commit -m "Initial Streamlit Cloud app (fichiers minimaux)"
+```
+3. Pousser la branche vers un repo public dédié:
+```
+git remote set-url origin https://github.com/christelle-git/dashboard_streamlit_nexgate.git
+git push -u origin streamlit-deploy
+```
+4. Sur Streamlit Cloud: New app → sélectionner le repo/branche ci‑dessus → Main file: `dashboard.py` → Deploy
+
+Notes:
+- Cette branche ne contient que l’app; aucune donnée/secret.
+- Les données sont lues via HTTP depuis `analytics_data.json` sur Nexgate.
+
 ### **Script deploy.sh - Quand l'utiliser ?**
 
 Le script `deploy.sh` est **UNIQUEMENT** pour les VPS externes :
@@ -275,6 +301,42 @@ pip install -r requirements.txt
 - **Authentification** (optionnelle)
 - **IP whitelist** (recommandé)
 - **Rate limiting** sur l'API
+
+### **3. Gestion sécurisée du token GitHub (pour `git push`)**
+
+Ne jamais committer un token. Méthodes recommandées sans exposition:
+
+- Option A – Fichier `~/.netrc` (simple):
+```
+machine github.com
+  login christelle-git
+  password VOTRE_TOKEN_GH_ICI
+```
+Puis protéger: `chmod 600 ~/.netrc`.
+
+- Option B – Script `GIT_ASKPASS` local (temporaire):
+```
+#!/bin/sh
+case "$1" in
+  *Username*) echo "christelle-git" ;;
+  *Password*) echo "VOTRE_TOKEN_GH_ICI" ;;
+esac
+```
+Sauver dans `~/.git-askpass-github`, protéger: `chmod 700 ~/.git-askpass-github`, puis:
+```
+GIT_ASKPASS=~/.git-askpass-github git push -u origin streamlit-deploy
+```
+
+- Option C – Fichier caché dans le HOME: `.token_github` (non versionné)
+  1. Créer `~/.token_github` contenant uniquement le token
+  2. Protéger: `chmod 600 ~/.token_github`
+  3. Utiliser ponctuellement:
+```
+GIT_ASKPASS=<(printf '#!/bin/sh\ncase "$1" in\n*Username*) echo "christelle-git" ;;\n*Password*) cat ~/.token_github ;;\nesac\n') git push -u origin streamlit-deploy
+```
+  (sur macOS zsh/bash, <( … ) crée un script éphémère en mémoire)
+
+Astuce: ajouter `.token_github` à `.gitignore` pour éviter tout ajout accidentel.
 
 ## 📈 Évolutions Futures
 
