@@ -391,8 +391,8 @@ st.title("Tracking nexgate Christelle")
         total_sessions = len(sessions_df) if not sessions_df.empty else 0
         st.metric("Sessions Totales", total_sessions)
     
-    # Onglets pour différentes analyses
-    tab1, tab2, tab3 = st.tabs(["🌍 Géolocalisation", "🛤️ Parcours Utilisateurs", "📁 Fichiers Cliqués"])
+    # Onglets pour différentes analyses (ordre et libellés comme Nexgate)
+    tab1, tab2, tab3 = st.tabs(["🌍 Géolocalisation", "📁 Tracking par Fichier", "🚶 Parcours Utilisateurs"])
     
     with tab1:
         st.subheader("🌍 Géolocalisation des Sessions")
@@ -466,55 +466,42 @@ st.title("Tracking nexgate Christelle")
         else:
             st.info("Aucune donnée de session disponible")
     
+    # Onglet 2: Tracking par fichier
     with tab2:
-        st.subheader("🛤️ Analyse des Parcours Utilisateurs")
-        
+        st.subheader("📁 Fichiers les Plus Cliqués")
+        if not clicks_df.empty:
+            files_data = clicks_df[clicks_df['file_clicked'].notna()]
+            if not files_data.empty:
+                file_counts = files_data['file_clicked'].value_counts().head(15)
+                fig = px.bar(x=file_counts.index, y=file_counts.values,
+                             title="Fichiers les plus cliqués")
+                fig.update_xaxes(title="Fichier")
+                fig.update_yaxes(title="Nombre de clics")
+                st.plotly_chart(fig, use_container_width=True)
+
+            # Détails des clics
+            details = files_data.copy()
+            details['Date'] = pd.to_datetime(details['timestamp']).dt.strftime('%d/%m/%Y %H:%M')
+            st.dataframe(details[['Date', 'page', 'file_clicked']].fillna(''), use_container_width=True)
+        else:
+            st.info("Aucune donnée de clics disponible")
+    
+    # Onglet 3: Parcours Utilisateurs
+    with tab3:
+        st.subheader("🚶 Parcours Utilisateurs")
         if not clicks_df.empty:
             journey_df, top_paths = analyze_user_journey(clicks_df)
-            
             if not journey_df.empty:
-                # Parcours les plus communs
                 st.subheader("🏆 Parcours les Plus Fréquents")
                 if top_paths:
                     paths_data = pd.DataFrame(top_paths, columns=['Parcours', 'Fréquence'])
-                    fig = px.bar(paths_data.head(5), x='Fréquence', y='Parcours', 
-                                orientation='h', title="Top 5 des Parcours")
+                    fig = px.bar(paths_data.head(5), x='Fréquence', y='Parcours',
+                                 orientation='h', title="Top 5 des Parcours")
                     st.plotly_chart(fig, use_container_width=True)
-                
-                # Détails des parcours
                 st.subheader("📋 Détails des Parcours")
                 st.dataframe(journey_df, use_container_width=True)
             else:
                 st.info("Aucun parcours utilisateur détecté")
-        else:
-            st.info("Aucune donnée de clics disponible")
-    
-    with tab3:
-        st.subheader("📁 Analyse des Fichiers Cliqués")
-        
-        if not clicks_df.empty:
-            files_data = clicks_df[clicks_df['file_clicked'].notna()]
-            
-            if not files_data.empty:
-                # Top fichiers
-                file_counts = files_data['file_clicked'].value_counts().head(10)
-                fig = px.bar(x=file_counts.index, y=file_counts.values,
-                           title="Top 10 des Fichiers les Plus Cliqués")
-                fig.update_xaxes(title="Fichiers")
-                fig.update_yaxes(title="Nombre de Clics")
-                st.plotly_chart(fig, use_container_width=True)
-                
-                # Types de fichiers
-                st.subheader("📊 Types de Fichiers")
-                files_data_copy = files_data.copy()
-                files_data_copy['file_extension'] = files_data_copy['file_clicked'].astype(str).str.split('.').str[-1]
-                ext_counts = files_data_copy['file_extension'].value_counts()
-                
-                fig2 = px.pie(values=ext_counts.values, names=ext_counts.index,
-                            title="Répartition par Type de Fichier")
-                st.plotly_chart(fig2, use_container_width=True)
-            else:
-                st.info("Aucun fichier cliqué détecté")
         else:
             st.info("Aucune donnée de clics disponible")
     
