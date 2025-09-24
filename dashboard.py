@@ -44,7 +44,7 @@ def get_analytics_data():
 
     sessions = []
     clicks = []
-            for entry in data:
+    for entry in data:
         t = entry.get('type')
         if t == 'session_start':
             sessions.append({
