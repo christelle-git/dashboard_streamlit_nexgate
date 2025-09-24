@@ -163,6 +163,24 @@ Notes:
 - Cette branche ne contient que l’app; aucune donnée/secret.
 - Les données sont lues via HTTP depuis `analytics_data.json` sur Nexgate.
 
+### **Parité d’UI avec le dashboard Nexgate (PHP)**
+
+La version Streamlit a été alignée pour correspondre aux vues du dashboard PHP Nexgate:
+
+- Titre: `Tracking nexgate Christelle`.
+- Bandeau d’état indiquant la source des données Nexgate.
+- Onglets et libellés identiques:
+  - "🌍 Géolocalisation": tableau trié du plus récent au plus ancien, colonnes `Date`, `Heure`, `Session ID`, `Pays`, `Ville`, `IP Utilisateur`.
+  - "📁 Tracking par Fichier": graphique barres "Fichiers les plus cliqués" + tableau des clics (Date, page, fichier).
+  - "🚶 Parcours Utilisateurs": Top 5 des parcours + tableau détaillé par session.
+
+Pour obtenir cette UI sur Streamlit Cloud, assurez‑vous de pousser la branche `streamlit-deploy` après modification locale:
+```
+git switch streamlit-deploy
+git merge main   # pour récupérer les dernières améliorations UI
+git push -u origin streamlit-deploy
+```
+
 ### **Script deploy.sh - Quand l'utiliser ?**
 
 Le script `deploy.sh` est **UNIQUEMENT** pour les VPS externes :
