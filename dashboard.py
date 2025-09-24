@@ -13,10 +13,7 @@ st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide")
 def get_analytics_data():
     # Récupère les données depuis Nexgate uniquement. Pas de fallback.
     try:
-        response = requests.get(
-            'https://christellelusso.nexgate.ch/analytics_data.json',
-            timeout=10
-        )
+        response = requests.get('https://christellelusso.nexgate.ch/analytics_data.json', timeout=10)
         response.raise_for_status()
         data = response.json()
     except Exception as err:
@@ -26,18 +23,18 @@ def get_analytics_data():
 
     sessions = []
     clicks = []
-            for entry in data:
+    for entry in data:
         t = entry.get('type')
         if t == 'session_start':
             sessions.append({
-                        'session_id': entry.get('session_id', ''),
-                        'timestamp': entry.get('timestamp', ''),
-                        'country': entry.get('country', ''),
-                        'city': entry.get('city', ''),
+                'session_id': entry.get('session_id', ''),
+                'timestamp': entry.get('timestamp', ''),
+                'country': entry.get('country', ''),
+                'city': entry.get('city', ''),
                 'client_ip': entry.get('client_ip', ''),
-                        'latitude': entry.get('latitude', 0),
-                        'longitude': entry.get('longitude', 0)
-                    })
+                'latitude': entry.get('latitude', 0),
+                'longitude': entry.get('longitude', 0)
+            })
         elif t == 'click':
             clicks.append({
                 'session_id': entry.get('session_id', ''),
