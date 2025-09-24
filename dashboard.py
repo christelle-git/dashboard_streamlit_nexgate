@@ -11,12 +11,27 @@ st.set_page_config(page_title=Config.DASHBOARD_TITLE, page_icon="📊", layout="
 
 @st.cache_data(ttl=60)
 def get_analytics_data():
+    """Récupère et parse les données JSON distantes.
+    Retourne deux DataFrames: sessions, clicks.
+    """
+    response = None
     try:
-        response = requests.get('https://christellelusso.nexgate.ch/analytics_data.json', timeout=10)
-        response.raise_for_status()
-            data = response.json()
+        response = requests.get(
+            'https://christellelusso.nexgate.ch/analytics_data.json',
+            timeout=10
+        )
     except Exception as e:
-        st.error(f"Impossible de récupérer les données: {e}")
+        st.error(f"Impossible de contacter le serveur: {e}")
+        return pd.DataFrame(), pd.DataFrame()
+
+    if response is None or response.status_code != 200:
+        st.error(f"Réponse invalide du serveur: {getattr(response, 'status_code', 'n/a')}")
+        return pd.DataFrame(), pd.DataFrame()
+
+    try:
+        data = response.json()
+    except Exception as e:
+        st.error(f"JSON invalide: {e}")
         return pd.DataFrame(), pd.DataFrame()
     
     sessions, clicks = [], []
