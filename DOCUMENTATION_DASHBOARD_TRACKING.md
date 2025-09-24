@@ -290,10 +290,41 @@ openssl s_client -connect christellelusso.nexgate.ch:443 -servername christellel
 - Synchronisation quotidienne du miroir via GitHub Actions
 - Pas besoin de contacter le support Nexgate
 
+**Corrections apportées** :
+1. **Workflow GitHub Actions corrigé** : Gestion d'erreur si Nexgate bloque les IPs externes
+2. **Fichier analytics_data.json initial** : Ajouté à la branche `streamlit-deploy` (167 KB, 4377 lignes)
+3. **Bouton "Rafraîchir les données"** : Vide le cache Streamlit et relance l'app
+4. **IndentationError corrigé** : Ligne 47 dans `dashboard.py` (boucle `for entry in data:`)
+
+**État final** :
+- ✅ **Streamlit Cloud** : Fonctionne avec fallback miroir GitHub
+- ✅ **Miroir GitHub** : Contient les données complètes (25 sessions, 26 clics)
+- ✅ **Workflow GitHub Actions** : Corrigé, ne fail plus si Nexgate inaccessible
+- ✅ **Interface utilisateur** : Bandeau d'information + bouton de rafraîchissement
+
+### **Erreurs courantes et solutions**
+
+**1. IndentationError dans dashboard.py**
+- **Symptôme** : "IndentationError: unexpected indent" à la ligne 47
+- **Cause** : Indentation incorrecte dans la boucle `for entry in data:`
+- **Solution** : Corriger l'indentation et pousser sur GitHub
+
+**2. Sessions Totales = 0 malgré des clics**
+- **Symptôme** : "Clics Totaux: 26" mais "Sessions Totales: 0"
+- **Cause** : Miroir GitHub incomplet ou cache Streamlit obsolète
+- **Solution** : Cliquer sur "Rafraîchir les données" ou attendre la sync GitHub Actions
+
+**3. Workflow GitHub Actions échoue**
+- **Symptôme** : "mv: cannot stat 'analytics_data.json.new': No such file or directory"
+- **Cause** : Nexgate bloque les IPs externes (GitHub Actions)
+- **Solution** : Workflow corrigé pour gérer cette situation gracieusement
+
 ### **Vérifier rapidement côté app**
 
-Dans l’interface Streamlit:
-- si bandeau rouge + message `Connection refused`, l’application est fonctionnelle mais Nexgate refuse la connexion
+Dans l'interface Streamlit:
+- si bandeau rouge + message `Connection refused`, l'application est fonctionnelle mais Nexgate refuse la connexion
+- si bandeau orange + "miroir GitHub", le fallback fonctionne correctement
+- si "Sessions Totales: 0", cliquer sur "Rafraîchir les données"
 - dès que `curl -I` renvoie 200 et que Nexgate est accessible depuis Internet, un simple « Rerun » recharge les données
 
 ### **Script deploy.sh - Quand l'utiliser ?**
@@ -517,6 +548,38 @@ Pour toute question ou problème :
 2. Vérifier les logs
 3. Tester avec `test_tracker_debug.html`
 4. Créer une issue GitHub
+
+## 🚀 Déploiement Streamlit Cloud (Solution recommandée)
+
+### **Architecture finale**
+```
+Streamlit Cloud → https://christellelusso.nexgate.ch/analytics_data.json (priorité)
+                ↓ (si échec)
+                → https://raw.githubusercontent.com/.../analytics_data.json (fallback)
+```
+
+### **Étapes de déploiement**
+1. **Créer le repository GitHub** : `christelle-git/dashboard_streamlit_nexgate`
+2. **Pousser la branche `streamlit-deploy`** avec les fichiers minimaux :
+   - `dashboard.py` (avec fallback miroir GitHub)
+   - `requirements.txt`
+   - `README.md`
+   - `.streamlit/config.toml`
+   - `analytics_data.json` (données initiales)
+3. **Déployer sur Streamlit Cloud** :
+   - New app → Repo: `christelle-git/dashboard_streamlit_nexgate`
+   - Branch: `streamlit-deploy`
+   - Main file: `dashboard.py`
+4. **Configurer la synchronisation** :
+   - Workflow GitHub Actions pour sync quotidienne
+   - Déclenchement manuel possible via l'interface GitHub
+
+### **Fonctionnalités**
+- ✅ **Fallback automatique** : Nexgate → miroir GitHub
+- ✅ **Bandeau d'information** : Source des données visible
+- ✅ **Bouton de rafraîchissement** : Vide le cache et relance
+- ✅ **Synchronisation automatique** : GitHub Actions quotidien
+- ✅ **Résilience** : Fonctionne même si Nexgate bloque les IPs externes
 
 ## 🌐 Déploiement sur Nexgate (Hébergeur Web-FTP)
 
