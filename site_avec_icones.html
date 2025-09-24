@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christelle Lusso</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background-color: #00E673;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .profile-info {
+            flex: 1;
+        }
+        
+        .nom {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .entreprise {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .adresse {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .contact {
+            text-align: right;
+            flex: 1;
+        }
+        
+        .email {
+            font-weight: bold;
+            color: #0066cc;
+        }
+        
+        .profile-photo {
+            width: 385px;
+            height: 250px;
+            background: linear-gradient(135deg, #00E673, #00B347);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            border-left: 4px solid #00E673;
+            background: #f9f9f9;
+            border-radius: 0 10px 10px 0;
+        }
+        
+        .section h2 {
+            color: #333;
+            border-bottom: 2px solid #00E673;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .drawing-item {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s;
+        }
+        
+        .drawing-item:hover {
+            transform: scale(1.05);
+        }
+        
+        .papers {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .papers li {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #00E673;
+        }
+        
+        .papers a {
+            color: #0066cc;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        
+        .papers a:hover {
+            text-decoration: underline;
+        }
+        
+        .tools {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .pdf-link {
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .pdf-link:hover {
+            background: #c0392b;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-photo {
+                width: 100%;
+                max-width: 300px;
+                margin-top: 20px;
+            }
+            
+            .gallery {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Note :</strong> Ce site utilise des images de remplacement car les fichiers originaux ne sont pas accessibles via Wayback Machine. 
+            Les vraies images et PDF seront restaurés une fois que nexgate.ch sera de nouveau accessible.
+        </div>
+        
+        <div class="header">
+            <div class="profile-info">
+                <div class="nom">LUSSO Christelle</div>
+                <div class="entreprise">
+                    <a href="https://www.renault.fr/" style="color: #333; text-decoration: none;">
+                        <i class="fas fa-car"></i> Renault Digital
+                    </a>
+                </div>
+                <div class="adresse">
+                    <i class="fas fa-map-marker-alt"></i> 122 av du général Leclerc<br>
+                    92100, Boulogne-Billancourt<br>
+                    FRANCE
+                </div>
+            </div>
+            
+            <div class="contact">
+                <div class="email">
+                    <b><i class="fas fa-envelope"></i> E-mail:</b><br>
+                    <a href="mailto:christelle.lusso@gmail.com">christelle.lusso@gmail.com</a>
+                </div>
+                <div style="margin-top: 20px;">
+                    <span style="border-bottom: 2px solid #333; padding-bottom: 5px;">
+                        <i class="fas fa-briefcase"></i> Working...
+                    </span>
+                </div>
+            </div>
+            
+            <div class="profile-photo">
+                <div>
+                    <i class="fas fa-user-circle" style="font-size: 48px; margin-bottom: 10px;"></i><br>
+                    Photo de Profil<br>
+                    Christelle Lusso
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-palette"></i> I love drawing</h2>
+            <div class="gallery">
+                <div class="drawing-item">Paper Physics</div>
+                <div class="drawing-item">Books Stack</div>
+                <div class="drawing-item">School</div>
+                <div class="drawing-item">Navier Stokes</div>
+                <div class="drawing-item">Finger Noze</div>
+                <div class="drawing-item">Wake Up</div>
+                <div class="drawing-item">Run Run</div>
+                <div class="drawing-item">Sport Training</div>
+                <div class="drawing-item">Dense</div>
+                <div class="drawing-item">Massue</div>
+                <div class="drawing-item">Joke Maths</div>
+                <div class="drawing-item">BD Criterium</div>
+                <div class="drawing-item">Sparkling</div>
+                <div class="drawing-item">Crazy Love</div>
+                <div class="drawing-item">Lenny</div>
+            </div>
+            
+            <div class="tools">
+                <strong><i class="fas fa-tools"></i> Tools:</strong> Pencils, markers, alcohol markers, watercolor, drawing gum (masking fluid).
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-file-alt"></i> Papers</h2>
+            <ul class="papers">
+                <li>
+                    <i>"Numerical modeling of disordered foam in 3D: effective properties by homogenization"</i>,<br>
+                    C. Lusso and X. Chateau, 2017, Proceedings in 6th Biot conference
+                    [<a href="https://hal.archives-ouvertes.fr/hal-01502566">HAL</a>][<a href="https://hal.archives-ouvertes.fr/hal-01502566/document">PDF</a>]
+                </li>
+                
+                <li>
+                    <i>"Disordered monodisperse 3D open-cell foams: Elasticity, Thermal conductivity and Permeability"</i>,<br>
+                    C. Lusso and X. Chateau, 2017.
+                    [<a href="https://hal.archives-ouvertes.fr/hal-01660715">HAL</a>][<a href="https://hal.archives-ouvertes.fr/hal-01660715/document">PDF</a>]
+                </li>
+                
+                <li>
+                    <i>"Explicit solutions to a free boundary model for the static/flowing transition in granular flows"</i>,<br>
+                    C. Lusso, F. Bouchut, A. Ern, A. Mangeney, 2016, Disc. Cont. Dyn. Syst., reviewed
+                    [<a href="https://hal-upec-upem.archives-ouvertes.fr/hal-01180686">HAL</a>][<a href="https://hal-upec-upem.archives-ouvertes.fr/hal-01180686v4/document">PDF</a>]
+                </li>
+                
+                <li>
+                    <i>"Two-dimensional simulation of viscoplastic Drucker-Prager flows by regularization, application to granular collapse"</i>,<br>
+                    C. Lusso, A. Ern, F. Bouchut, A. Mangeney, M. Farin and O. Roche, 2017, J. Comp. Phys.
+                    [<a href="http://www.sciencedirect.com/science/article/pii/S0021999116306982">DOI</a>][<a href="https://hal.archives-ouvertes.fr/hal-01133786">HAL</a>][<a href="https://hal-upec-upem.archives-ouvertes.fr/hal-01133786v2/document">PDF</a>]
+                </li>
+                
+                <li>
+                    <i>"Geostrophic vs magnetostrophic adjustment and nonlinear magneto-inertia-gravity waves in rotating shallow water magnetohydrodynamics"</i>,<br>
+                    V. Zeitlin, C. Lusso and F. Bouchut, 2015, Geophys. Astrophys. Fluid Dynamics
+                    [<a href="http://www.tandfonline.com/doi/abs/10.1080/03091929.2015.1072178?journalCode=ggaf20">DOI</a>]
+                </li>
+                
+                <li>
+                    <i>"A free interface model for static/flowing dynamics in thin-layer flows of granular materials with yield: simple shear simulations and comparison with experiments"</i>,<br>
+                    C. Lusso, F. Bouchut, A. Ern and A. Mangeney, 2014, Appl. Sci.
+                    [<a href="http://www.mdpi.com/2076-3417/7/4/386">DOI</a>][<a href="https://hal.archives-ouvertes.fr/hal-00992309">HAL</a>][<a href="https://hal-upec-upem.archives-ouvertes.fr/hal-00992309v4/document">PDF</a>]
+                </li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-microphone"></i> Conferences/Talks</h2>
+            <ul class="papers">
+                <li>
+                    <i>"Two-dimensional simulation of viscoplastic Drucker-Prager flows by regularization, application to granular collapse"</i>,<br>
+                    LRC Manon (Jussieu, 31 mars 2015) 
+                    [<a href="pdf/abstract_lusso.pdf" class="pdf-link">Abstract</a>][<a href="pdf/presentation_ljll.pdf" class="pdf-link">Slides</a>]
+                </li>
+                <li>
+                    <i>Numerical Fluid Mechanics</i>, Henri Poincaré Institute - Paris, 2015
+                </li>
+                <li>
+                    <i>"Thin layer model for gravity flows with fluid/solid transition"</i>,<br>
+                    National Congress of Numerical Analysis - Superbesse (France), 2012
+                </li>
+                <li>
+                    <i>Numerical approximations of hyperbolic systems with source terms and applications</i>, Roscoff (France), 2011
+                </li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-graduation-cap"></i> PhD Thesis</h2>
+            <ul class="papers">
+                <li>
+                    <i>"Numerical modeling of gravitational viscoplastic flows with fluid/solid transition"</i>,<br>
+                    C. Lusso, 2013, CERMICS-ENPC [<a href="thesis.pdf" class="pdf-link">PDF</a>]
+                </li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-chalkboard-teacher"></i> Teaching</h2>
+            <ul class="papers">
+                <li>
+                    <strong>2021/2022:</strong>
+                    <ul>
+                        <li>Analyse des données - L3 - Licence Analyse économique - Université Paris 2</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>2020/2021:</strong>
+                    <ul>
+                        <li>Stats1/Maths1 - Licence Sciences Economiques & Gestion - Université Paris 2</li>
+                        <li>Stats2/Maths2 - Licence Sciences Economiques & Gestion - Université Paris 2</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>2012/2013:</strong>
+                    <ul>
+                        <li>Linux/Emacs/Scilab/LaTeX - 1ère année Ecole des Ponts ParisTech</li>
+                        <li>Mathématiques générales - 1ère année ESIEE Engineerings</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>2011/2012:</strong>
+                    <ul>
+                        <li>Introduction au Calcul Scientifique - 2em année Ecole des Mines ParisTech</li>
+                        <li>Linux/Emacs/Scilab/LaTeX - 1ère année Ecole des Ponts ParisTech</li>
+                        <li>Calcul Vectoriel - L1 Maths-Informatique Université Paris 6</li>
+                        <li>Algèbre 1 - L1 Sciences Physiques & Sciences pour l'ingénieur Université Paris-Est Marne la vallée</li>
+                        <li>Algèbre 2 - L2 Sciences Physiques Université Paris-Est Marne la vallée</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>2010/2011:</strong>
+                    <ul>
+                        <li>Analyse numérique et Optimisation - 3em année ESIEE Engineerings</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html> 

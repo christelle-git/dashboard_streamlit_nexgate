@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Temporaire - Nexgate.ch Indisponible</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+        }
+        
+        .status {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .content {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 0 10px 10px 0;
+        }
+        
+        .section h2 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        
+        .dashboard-link {
+            display: inline-block;
+            background: #27ae60;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            margin: 10px 0;
+            transition: background 0.3s;
+        }
+        
+        .dashboard-link:hover {
+            background: #229954;
+        }
+        
+        .contact-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .contact-info h3 {
+            color: #495057;
+            margin-top: 0;
+        }
+        
+        .contact-info ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .contact-info li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .contact-info li:last-child {
+            border-bottom: none;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 Site Temporaire</h1>
+            <p>En attendant la résolution du problème avec nexgate.ch</p>
+            <div class="status">
+                ⚠️ ATTENTION : Le serveur nexgate.ch est indisponible depuis plus de 24h
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2>📊 Dashboard Analytics</h2>
+                <p>Votre dashboard analytics fonctionne toujours en local :</p>
+                <a href="http://localhost:8501" class="dashboard-link" target="_blank">
+                    🚀 Accéder au Dashboard Analytics
+                </a>
+                <p><small>Le dashboard utilise actuellement des données de test en attendant la récupération de vos vraies données.</small></p>
+            </div>
+            
+            <div class="section">
+                <h2>📧 Contact et Suivi</h2>
+                <p>Nous avons contacté nexgate.ch pour récupérer toutes vos données. Voici les actions en cours :</p>
+                <ul>
+                    <li>✅ Email envoyé à nexgate.ch</li>
+                    <li>⏳ En attente de réponse</li>
+                    <li>📞 Contact téléphonique prévu</li>
+                    <li>🔄 Suivi régulier</li>
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2>🔧 Solutions Temporaires</h2>
+                <p>En attendant la résolution, nous avons mis en place :</p>
+                <ul>
+                    <li>✅ Dashboard fonctionnel avec données de test</li>
+                    <li>✅ Site temporaire d'information</li>
+                    <li>✅ Plan de migration vers un autre hébergeur</li>
+                    <li>✅ Système de sauvegarde automatique</li>
+                </ul>
+            </div>
+            
+            <div class="contact-info">
+                <h3>📞 Contacts d'urgence</h3>
+                <ul>
+                    <li><strong>SWITCH (.ch domain manager):</strong> +41 44 268 15 40</li>
+                    <li><strong>Email SWITCH:</strong> tld-admin@switch.ch</li>
+                    <li><strong>Emails nexgate.ch:</strong> support@nexgate.ch, admin@nexgate.ch</li>
+                    <li><strong>Support local:</strong> Dashboard disponible sur localhost:8501</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>🕐 Dernière mise à jour : <span id="datetime"></span></p>
+            <p>📧 Pour toute question : Utilisez le dashboard local ou contactez-nous</p>
+        </div>
+    </div>
+    
+    <script>
+        // Afficher la date et heure actuelles
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                timeZone: 'Europe/Paris'
+            };
+            document.getElementById('datetime').textContent = now.toLocaleDateString('fr-FR', options);
+        }
+        
+        updateDateTime();
+        setInterval(updateDateTime, 60000); // Mise à jour toutes les minutes
+    </script>
+</body>
+</html> 

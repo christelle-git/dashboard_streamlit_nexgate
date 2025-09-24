@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Fetch</title>
+  <script>
+    function testFetch() {
+      fetch('https://christellelusso.nexgate.ch/api.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'test', session_id: 'test_' + Date.now() })
+      })
+      .then(r => r.json())
+      .then(data => alert('Réponse: ' + JSON.stringify(data)))
+      .catch(e => alert('Erreur: ' + e));
+    }
+  </script>
+</head>
+<body>
+  <button onclick="testFetch()">Test API PHP</button>
+</body>
+</html>

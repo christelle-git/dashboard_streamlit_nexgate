@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tracking Live</title>
+</head>
+<body>
+    <h1>Test du Tracking sur le Site Live</h1>
+    <p>Cliquez sur ce bouton pour tester le tracking :</p>
+    <button id="testButton">Cliquer ici pour tester</button>
+    
+    <div id="status"></div>
+    
+    <script>
+        // Test direct du tracking
+        document.getElementById('testButton').addEventListener('click', function() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<p>Envoi des données de test...</p>';
+            
+            // Données de test
+            const testData = {
+                type: 'click',
+                session_id: 'test_session_' + Date.now(),
+                element_id: 'testButton',
+                element_type: 'button',
+                element_class: '',
+                element_text: 'Cliquer ici pour tester',
+                page: '/test',
+                timestamp: new Date().toISOString(),
+                sequence_order: 1,
+                x_coordinate: 100,
+                y_coordinate: 100,
+                client_ip: '127.0.0.1'
+            };
+            
+            // Envoi vers l'API
+            fetch('https://christellelusso.nexgate.ch/api.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Tracker-Agent': 'test-script'
+                },
+                body: JSON.stringify(testData)
+            })
+            .then(response => {
+                console.log('Réponse API:', response);
+                return response.text();
+            })
+            .then(data => {
+                console.log('Données reçues:', data);
+                statusDiv.innerHTML = '<p style="color: green;">✅ Données envoyées avec succès !</p><p>Réponse: ' + data + '</p>';
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                statusDiv.innerHTML = '<p style="color: red;">❌ Erreur lors de l\'envoi: ' + error.message + '</p>';
+            });
+        });
+    </script>
+</body>
+</html> 

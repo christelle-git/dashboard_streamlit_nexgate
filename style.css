@@ -1,0 +1,356 @@
+/* Base styles and reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    line-height: 1.6;
+    background-color: #b3d9ff; /* Light blue background */
+    color: #333;
+    padding: 20px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%; /* Prevent iOS font size changes */
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 15px;
+}
+
+/* Header styles */
+.header {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 20px;
+    background: linear-gradient(to bottom, #00e673, #00b359);
+}
+
+.header-left {
+    flex: 1;
+    min-width: 300px;
+    padding: 20px;
+    color: white;
+}
+
+.header-center {
+    flex: 1;
+    min-width: 250px;
+    padding: 20px;
+}
+
+.header-right {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+.name {
+    font-size: 30px;
+    font-weight: bold;
+    color: #044AFE;
+    margin-bottom: 20px;
+}
+
+.company a {
+    font-size: 18px;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.company a:hover {
+    text-decoration: underline;
+}
+
+.address {
+    margin-top: 15px;
+    font-size: 15px;
+}
+
+.contact-info {
+    margin-bottom: 15px;
+}
+
+.contact-info a {
+    color: #044AFE;
+    text-decoration: none;
+}
+
+.contact-info a:hover {
+    text-decoration: underline;
+}
+
+.status {
+    font-weight: bold;
+    font-size: 18px;
+    color: #044AFE;
+    margin-top: 10px;
+}
+
+.lab-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Section styles */
+.content-section {
+    padding: 30px;
+    border-bottom: 1px solid #eee;
+}
+
+.section-title {
+    font-size: 24px;
+    color: #009933;
+    border-bottom: 2px solid #009933;
+    display: inline-block;
+    margin-bottom: 25px;
+    padding-bottom: 5px;
+}
+
+.subsection-title {
+    font-size: 20px;
+    color: #009933;
+    margin: 20px 0 15px;
+}
+
+.art-intro {
+    font-size: 18px;
+    margin-bottom: 30px;
+}
+
+.art-intro a {
+    color: #044AFE;
+    text-decoration: none;
+}
+
+hr {
+    margin: 20px 0;
+    border: none;
+    border-top: 1px solid #ddd;
+}
+
+/* Gallery */
+.gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+}
+
+.gallery-item {
+    display: block;
+    width: calc(25% - 15px);
+    min-width: 200px;
+    transition: transform 0.3s;
+}
+
+.gallery-item:hover {
+    transform: scale(1.05);
+}
+
+.gallery-item img {
+  width: 100%;
+  height: auto;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Image mystic.jpg 5 fois plus large - uniquement dans la galerie */
+.gallery .gallery-item-mystic {
+  width: calc(125% - 15px) !important; /* 5 fois plus large que les autres (25% * 5 = 125%) */
+  min-width: 1000px; /* Largeur minimale pour s'assurer qu'elle soit bien visible */
+}
+
+.gallery .gallery-item-mystic img {
+  width: 100%;
+  height: auto;
+}
+
+.tools-section {
+    margin-top: 30px;
+    font-size: 18px;
+}
+
+.tools-section p {
+    margin-bottom: 10px;
+}
+
+/* List styles */
+.papers-list, .teaching-list {
+    list-style-type: none;
+    padding-left: 20px;
+}
+
+.papers-list li, .teaching-list li {
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+
+.teaching-list ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin-top: 5px;
+}
+
+.teaching-list ul li {
+    margin-bottom: 5px;
+    font-size: 16px;
+}
+
+.teaching-list ul ul {
+    list-style-type: circle;
+    padding-left: 30px;
+    margin-top: 5px;
+}
+
+.teaching-list ul ul li {
+    margin-bottom: 3px;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.3;
+}
+
+/* Links */
+a {
+    color: #044AFE;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 992px) {
+    .gallery-item {
+        width: calc(33.333% - 15px);
+    }
+    
+    body {
+        padding: 10px;
+    }
+    
+    .content-section {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+    }
+    
+    .header-left, .header-center, .header-right {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .gallery-item {
+        width: calc(50% - 15px);
+    }
+    
+    .section-title {
+        font-size: 20px;
+    }
+    
+    .art-intro, .papers-list li, .teaching-list li {
+        font-size: 16px;
+    }
+    
+    table {
+        width: 100%;
+    }
+    
+    tr, tbody {
+        display: block;
+    }
+    
+    td {
+        display: block;
+        width: 100%;
+        text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+    
+    .container {
+        padding: 10px;
+    }
+    
+    .gallery-item {
+        width: 100%;
+    }
+    
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    img[style] {
+        width: 100% !important;
+        height: auto !important;
+    }
+    
+    .header-left {
+        padding: 15px;
+    }
+    
+    .company a {
+        font-size: 16px;
+    }
+    
+    .name {
+        font-size: 24px;
+    }
+    
+    .status {
+        font-size: 16px;
+    }
+    
+    .section-title, .subsection-title {
+        font-size: 18px;
+    }
+    
+    .header-left, .header-center, .header-right {
+        padding: 10px;
+    }
+    
+    .name {
+        margin-bottom: 15px;
+    }
+    
+    .section-title {
+        margin-bottom: 20px;
+    }
+    
+    .content-section {
+        padding: 15px;
+    }
+    
+    li, p, .art-intro, .tools-section {
+        font-size: 14px;
+    }
+    
+    table[style] {
+        width: 100% !important;
+    }
+} 
