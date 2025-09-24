@@ -1,6 +1,6 @@
 # Dashboard Streamlit – Déploiement Cloud (Branche streamlit-deploy)
 
-Ce dossier contient la version minimale du dashboard pour un déploiement sur Streamlit Cloud. Les données sont lues depuis https://christellelusso.nexgate.ch/analytics_data.json.
+Ce dossier contient la version minimale du dashboard pour un déploiement sur Streamlit Cloud. Les données sont lues depuis https://christellelusso.nexgate.ch/analytics_data.json, avec un fallback automatique vers un miroir GitHub si Nexgate est indisponible.
 
 ## Sommaire
 
@@ -19,6 +19,8 @@ Ce dossier contient la version minimale du dashboard pour un déploiement sur St
 ## Déploiement Streamlit Cloud (pas à pas)
 1. Pousser la branche streamlit-deploy sur GitHub (voir Auth ci-dessous)
 2. Streamlit Cloud → New app → Repo: christelle-git/dashboard_streamlit_nexgate → Branch: streamlit-deploy → Main file: dashboard.py → Deploy
+
+Note: le fallback lit `analytics_data.json` depuis la branche `streamlit-deploy` du même repo (chemin raw). Un workflow GitHub Actions peut synchroniser ce fichier quotidiennement depuis Nexgate.
 
 ## Pousser UNIQUEMENT les fichiers nécessaires
 Branche orpheline (pas d’historique):

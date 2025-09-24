@@ -11,15 +11,35 @@ st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide")
 
 @st.cache_data(ttl=60)
 def get_analytics_data():
-    # Récupère les données depuis Nexgate uniquement. Pas de fallback.
+    """Tente de charger les données depuis Nexgate, puis depuis le miroir GitHub en fallback.
+    Retourne: (sessions_df, clicks_df, source_str)
+    """
+    primary_url = 'https://christellelusso.nexgate.ch/analytics_data.json'
+    mirror_url = (
+        'https://raw.githubusercontent.com/christelle-git/dashboard_streamlit_nexgate/'
+        'streamlit-deploy/analytics_data.json'
+    )
+
+    data = None
+    source = ""
+
+    # Source principale: Nexgate
     try:
-        response = requests.get('https://christellelusso.nexgate.ch/analytics_data.json', timeout=10)
-        response.raise_for_status()
-        data = response.json()
-    except Exception as err:
-        st.error("Nexgate indisponible: impossible de charger les données en production.")
-        st.caption(str(err))
-        return pd.DataFrame(), pd.DataFrame()
+        resp = requests.get(primary_url, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        source = "nexgate"
+    except Exception:
+        # Fallback: miroir GitHub
+        try:
+            resp2 = requests.get(mirror_url, timeout=10)
+            resp2.raise_for_status()
+            data = resp2.json()
+            source = "github_mirror"
+        except Exception as err2:
+            st.error("Impossible de charger les données (Nexgate et miroir GitHub indisponibles).")
+            st.caption(str(err2))
+            return pd.DataFrame(), pd.DataFrame(), "none"
 
     sessions = []
     clicks = []
@@ -44,17 +64,22 @@ def get_analytics_data():
                 'sequence_order': entry.get('sequence_order', 0)
             })
 
-    return pd.DataFrame(sessions), pd.DataFrame(clicks)
+    return pd.DataFrame(sessions), pd.DataFrame(clicks), source
 
 
 def main():
     st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide")
     st.title(APP_TITLE)
 
-    sessions_df, clicks_df = get_analytics_data()
+    sessions_df, clicks_df, source = get_analytics_data()
 
     # Bandeau d'information source
-    st.success("Données récupérées depuis le serveur web (nexgate.ch)")
+    if source == "nexgate":
+        st.success("Source des données: serveur Nexgate (production)")
+    elif source == "github_mirror":
+        st.warning("Source des données: miroir GitHub (Nexgate indisponible)")
+    else:
+        st.error("Aucune source de données disponible")
 
     # Métriques principales (alignées Nexgate)
     c1, c2 = st.columns(2)
