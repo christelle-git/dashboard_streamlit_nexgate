@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 import requests
+import time
 
 # Streamlit Cloud: aucune dépendance à config_setup.py nécessaire
 APP_TITLE = "Tracking nexgate Christelle"
@@ -43,18 +44,18 @@ def get_analytics_data():
 
     sessions = []
     clicks = []
-    for entry in data:
+            for entry in data:
         t = entry.get('type')
         if t == 'session_start':
             sessions.append({
-                'session_id': entry.get('session_id', ''),
-                'timestamp': entry.get('timestamp', ''),
-                'country': entry.get('country', ''),
-                'city': entry.get('city', ''),
+                        'session_id': entry.get('session_id', ''),
+                        'timestamp': entry.get('timestamp', ''),
+                        'country': entry.get('country', ''),
+                        'city': entry.get('city', ''),
                 'client_ip': entry.get('client_ip', ''),
-                'latitude': entry.get('latitude', 0),
-                'longitude': entry.get('longitude', 0)
-            })
+                        'latitude': entry.get('latitude', 0),
+                        'longitude': entry.get('longitude', 0)
+                    })
         elif t == 'click':
             clicks.append({
                 'session_id': entry.get('session_id', ''),
@@ -70,6 +71,13 @@ def get_analytics_data():
 def main():
     st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide")
     st.title(APP_TITLE)
+
+    # Action: rafraîchir les données (vide le cache et relance)
+    c_refresh, _ = st.columns([1, 9])
+    with c_refresh:
+        if st.button("🔄 Rafraîchir les données"):
+            st.cache_data.clear()
+            st.rerun()
 
     sessions_df, clicks_df, source = get_analytics_data()
 
