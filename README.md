@@ -2,6 +2,15 @@
 
 Ce dossier contient la version minimale du dashboard pour un déploiement sur Streamlit Cloud. Les données sont lues depuis https://christellelusso.nexgate.ch/analytics_data.json.
 
+## Sommaire
+
+- Fichiers inclus
+- Déploiement Streamlit Cloud
+- Pousser uniquement les fichiers nécessaires
+- Authentification GitHub
+- Politique d’indexation
+- Maintenance
+
 ## Fichiers inclus
 - dashboard.py
 - requirements.txt

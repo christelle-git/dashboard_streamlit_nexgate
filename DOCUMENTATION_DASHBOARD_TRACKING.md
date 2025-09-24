@@ -1,5 +1,26 @@
 # 📊 Documentation du Dashboard de Tracking Analytics
 
+## Sommaire
+
+- [🎯 Vue d'ensemble](#-vue-densemble)
+- [🏗️ Architecture du Système](#️-architecture-du-système)
+- [📁 Structure des Fichiers](#-structure-des-fichiers)
+- [🔧 Configuration et Installation](#-configuration-et-installation)
+- [🏗️ Architecture et Options de Déploiement](#️-architecture-et-options-de-déploiement)
+  - [Comparaison des solutions de déploiement](#comparaison-des-solutions-de-déploiement-)
+  - [Parité d’UI avec le dashboard Nexgate (PHP)](#parité-dui-avec-le-dashboard-nexgate-php)
+  - [Mode Production – Source unique Nexgate](#mode-production--source-unique-nexgate-sans-fallback)
+  - [Dépannage – Accès HTTPS depuis Streamlit Cloud](#dépannage--accès-https-depuis-streamlit-cloud)
+- [📊 Fonctionnalités du Dashboard](#-fonctionnalités-du-dashboard)
+- [🎯 Types d'Événements Trackés](#-types-déénements-trackés)
+- [🔄 Workflow de Développement](#-workflow-de-développement)
+- [🛠️ Maintenance et Monitoring](#️-maintenance-et-monitoring)
+- [🔒 Sécurité](#-sécurité)
+- [📈 Évolutions Futures](#-évolutions-futures)
+- [🐛 Dépannage](#-dépannage)
+- [📞 Support](#-support)
+- [🌐 Déploiement sur Nexgate (Hébergeur Web-FTP)](#-déploiement-sur-nexgate-hébergeur-web-ftp)
+
 ## 🎯 Vue d'ensemble
 
 Ce dashboard de tracking analytics permet de visualiser et analyser les données de visite d'un site web en temps réel. Il collecte les interactions utilisateurs, la géolocalisation, et génère des rapports détaillés.
