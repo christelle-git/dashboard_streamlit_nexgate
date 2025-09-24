@@ -202,19 +202,39 @@ git merge main   # pour récupérer les dernières améliorations UI
 git push -u origin streamlit-deploy
 ```
 
-### **Mode Production – Source unique Nexgate (sans fallback)**
+### **Mode Production – Nexgate avec Fallback Miroir GitHub**
 
-Depuis le 24/09/2025, le dashboard Streamlit (branche `streamlit-deploy`) lit les données UNIQUEMENT depuis:
+Depuis le 24/09/2025, le dashboard Streamlit (branche `streamlit-deploy`) utilise **Nexgate en priorité** avec un fallback automatique vers un miroir GitHub.
 
+**Architecture** :
 ```
-https://christellelusso.nexgate.ch/analytics_data.json
+Streamlit Cloud → https://christellelusso.nexgate.ch/analytics_data.json (priorité)
+                ↓ (si échec)
+                → https://raw.githubusercontent.com/.../analytics_data.json (fallback)
 ```
 
-Si Nexgate est indisponible, l’app affiche un message explicite et ne charge pas de données (aucun fallback automatique vers GitHub/local).
+**Sources de données** :
+1. **Nexgate** (production) : `https://christellelusso.nexgate.ch/analytics_data.json`
+2. **Miroir GitHub** (fallback) : `https://raw.githubusercontent.com/christelle-git/dashboard_streamlit_nexgate/streamlit-deploy/analytics_data.json`
 
-Motivation:
-- garantir que les utilisateurs externes voient exactement les données de Nexgate
-- éviter les divergences entre un JSON GitHub et Nexgate
+**Interface utilisateur** :
+- 🟢 **Bandeau vert** : "Source des données: serveur Nexgate (production)"
+- 🟡 **Bandeau orange** : "Source des données: miroir GitHub (Nexgate indisponible)"
+- 🔴 **Bandeau rouge** : "Aucune source de données disponible"
+
+**Synchronisation du miroir** :
+- **Workflow GitHub Actions** : Synchronisation quotidienne à 06:00 UTC
+- **Fréquence** : 1 fois/jour (évite la surcharge Nexgate)
+- **Déclenchement manuel** : Possible via l'interface GitHub Actions
+
+**Avantages** :
+- Résilience : fonctionne même si Nexgate est temporairement indisponible
+- Données à jour : priorité à Nexgate en temps réel
+- Transparence : l'utilisateur sait d'où viennent les données
+
+**Inconvénients** :
+- Miroir potentiellement décalé (max 24h)
+- Complexité légèrement accrue
 
 ### **Dépannage – Accès HTTPS depuis Streamlit Cloud**
 
@@ -259,6 +279,12 @@ curl -Iv https://christellelusso.nexgate.ch/analytics_data.json
 # Vérification du certificat SSL
 openssl s_client -connect christellelusso.nexgate.ch:443 -servername christellelusso.nexgate.ch
 ```
+
+**Solution implémentée** : Fallback miroir GitHub
+- Le dashboard tente d'abord Nexgate, puis bascule automatiquement sur le miroir GitHub
+- Bandeau d'information indique la source utilisée
+- Synchronisation quotidienne du miroir via GitHub Actions
+- Pas besoin de contacter le support Nexgate
 
 ### **Vérifier rapidement côté app**
 
