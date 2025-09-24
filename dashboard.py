@@ -11,50 +11,35 @@ st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide")
 
 @st.cache_data(ttl=60)
 def get_analytics_data():
-    """Récupère les données avec fallbacks (HTTPS → HTTP → GitHub raw → fichier local). Retourne sessions_df, clicks_df."""
-    urls = [
-        'https://christellelusso.nexgate.ch/analytics_data.json',
-        'http://christellelusso.nexgate.ch/analytics_data.json',
-        'https://raw.githubusercontent.com/christelle-git/dashboard_streamlit_nexgate/streamlit-deploy/analytics_data.json'
-    ]
-
-    data = None
-    for url in urls:
-        try:
-            r = requests.get(url, timeout=10)
-            if r.status_code == 200:
-                data = r.json()
-                break
-        except Exception:
-            continue
-
-    if data is None:
-        try:
-            import json as _json
-            with open('analytics_data.json', 'r') as f:
-                data = _json.load(f)
-        except Exception as e:
-            st.error(f"Impossible de récupérer les données (HTTPS/HTTP/GitHub/local): {e}")
-            return pd.DataFrame(), pd.DataFrame()
+    """Récupère les données depuis Nexgate uniquement. Retourne sessions_df, clicks_df.
+    En cas d'indisponibilité, affiche une erreur claire (pas de fallback)."""
+    try:
+        r = requests.get('https://christellelusso.nexgate.ch/analytics_data.json', timeout=10)
+        r.raise_for_status()
+        data = r.json()
+    except Exception as e:
+        st.error("Nexgate indisponible: impossible de charger les données en production.")
+        st.caption(str(e))
+        return pd.DataFrame(), pd.DataFrame()
 
     sessions, clicks = [], []
-    for entry in data:
-        if entry.get('type') == 'session_start':
+            for entry in data:
+                if entry.get('type') == 'session_start':
             sessions.append({
-                'session_id': entry.get('session_id', ''),
+                        'session_id': entry.get('session_id', ''),
                 'timestamp': entry.get('timestamp', ''),
-                'country': entry.get('country', ''),
-                'city': entry.get('city', ''),
+                        'country': entry.get('country', ''),
+                        'city': entry.get('city', ''),
                 'client_ip': entry.get('client_ip', ''),
-                'latitude': entry.get('latitude', 0),
+                        'latitude': entry.get('latitude', 0),
                 'longitude': entry.get('longitude', 0)
-            })
-        elif entry.get('type') == 'click':
+                    })
+                elif entry.get('type') == 'click':
             clicks.append({
-                'session_id': entry.get('session_id', ''),
+                        'session_id': entry.get('session_id', ''),
                 'timestamp': entry.get('timestamp', ''),
-                'page': entry.get('page', ''),
-                'file_clicked': entry.get('file_clicked', ''),
+                        'page': entry.get('page', ''),
+                        'file_clicked': entry.get('file_clicked', ''),
                 'sequence_order': entry.get('sequence_order', 0)
             })
 
