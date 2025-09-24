@@ -18,7 +18,7 @@ def get_analytics_data():
             timeout=10
         )
         response.raise_for_status()
-            data = response.json()
+        data = response.json()
     except Exception as err:
         st.error("Nexgate indisponible: impossible de charger les données en production.")
         st.caption(str(err))
