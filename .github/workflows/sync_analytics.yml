@@ -2,7 +2,7 @@ name: Sync analytics_data.json from Nexgate
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # toutes les 15 minutes
+    - cron: '0 6 * * *'  # 1 fois par jour à 06:00 UTC (faible charge)
   workflow_dispatch: {}
 
 permissions:
@@ -15,16 +15,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download analytics_data.json from Nexgate (HTTPS)
+      - name: Download analytics_data.json from Nexgate (HTTPS) avec cache
         run: |
           set -e
-          curl -fSL --max-time 20 https://christellelusso.nexgate.ch/analytics_data.json -o analytics_data.json.new || echo "download_failed=1" >> $GITHUB_ENV
+          # Ne télécharge que si le fichier distant est plus récent que le local (-z)
+          curl -fSL --max-time 20 -z analytics_data.json https://christellelusso.nexgate.ch/analytics_data.json -o analytics_data.json.new || echo "download_failed=1" >> $GITHUB_ENV
 
-      - name: Fallback to HTTP if HTTPS failed
+      - name: Fallback to HTTP si HTTPS échoue (avec cache)
         if: env.download_failed == '1'
         run: |
           set -e
-          curl -fSL --max-time 20 http://christellelusso.nexgate.ch/analytics_data.json -o analytics_data.json.new
+          curl -fSL --max-time 20 -z analytics_data.json http://christellelusso.nexgate.ch/analytics_data.json -o analytics_data.json.new
 
       - name: Commit if file changed
         run: |
