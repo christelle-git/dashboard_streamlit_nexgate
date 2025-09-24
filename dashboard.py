@@ -7,7 +7,7 @@ import requests
 # Streamlit Cloud: aucune dépendance à config_setup.py nécessaire
 APP_TITLE = "Analytics Avancé - Christelle Lusso"
 
-st.set_page_config(page_title=Config.DASHBOARD_TITLE, page_icon="📊", layout="wide")
+st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide")
 
 @st.cache_data(ttl=60)
 def get_analytics_data():
@@ -33,25 +33,25 @@ def get_analytics_data():
     except Exception as e:
         st.error(f"JSON invalide: {e}")
         return pd.DataFrame(), pd.DataFrame()
-    
-    sessions, clicks = [], []
-            for entry in data:
-                if entry.get('type') == 'session_start':
+
+    sessions, clicks = [] , []
+    for entry in data:
+        if entry.get('type') == 'session_start':
             sessions.append({
-                        'session_id': entry.get('session_id', ''),
+                'session_id': entry.get('session_id', ''),
                 'timestamp': entry.get('timestamp', ''),
-                        'country': entry.get('country', ''),
-                        'city': entry.get('city', ''),
+                'country': entry.get('country', ''),
+                'city': entry.get('city', ''),
                 'client_ip': entry.get('client_ip', ''),
-                        'latitude': entry.get('latitude', 0),
+                'latitude': entry.get('latitude', 0),
                 'longitude': entry.get('longitude', 0)
-                    })
-                elif entry.get('type') == 'click':
+            })
+        elif entry.get('type') == 'click':
             clicks.append({
-                        'session_id': entry.get('session_id', ''),
+                'session_id': entry.get('session_id', ''),
                 'timestamp': entry.get('timestamp', ''),
-                        'page': entry.get('page', ''),
-                        'file_clicked': entry.get('file_clicked', ''),
+                'page': entry.get('page', ''),
+                'file_clicked': entry.get('file_clicked', ''),
                 'sequence_order': entry.get('sequence_order', 0)
             })
 
