@@ -11,35 +11,39 @@ st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide")
 
 @st.cache_data(ttl=60)
 def get_analytics_data():
-    """Récupère les données depuis Nexgate uniquement. Retourne sessions_df, clicks_df.
-    En cas d'indisponibilité, affiche une erreur claire (pas de fallback)."""
+    # Récupère les données depuis Nexgate uniquement. Pas de fallback.
     try:
-        r = requests.get('https://christellelusso.nexgate.ch/analytics_data.json', timeout=10)
-        r.raise_for_status()
-        data = r.json()
-    except Exception as e:
+        response = requests.get(
+            'https://christellelusso.nexgate.ch/analytics_data.json',
+            timeout=10
+        )
+        response.raise_for_status()
+            data = response.json()
+    except Exception as err:
         st.error("Nexgate indisponible: impossible de charger les données en production.")
-        st.caption(str(e))
+        st.caption(str(err))
         return pd.DataFrame(), pd.DataFrame()
 
-    sessions, clicks = [], []
+    sessions = []
+    clicks = []
             for entry in data:
-                if entry.get('type') == 'session_start':
+        t = entry.get('type')
+        if t == 'session_start':
             sessions.append({
                         'session_id': entry.get('session_id', ''),
-                'timestamp': entry.get('timestamp', ''),
+                        'timestamp': entry.get('timestamp', ''),
                         'country': entry.get('country', ''),
                         'city': entry.get('city', ''),
                 'client_ip': entry.get('client_ip', ''),
                         'latitude': entry.get('latitude', 0),
-                'longitude': entry.get('longitude', 0)
+                        'longitude': entry.get('longitude', 0)
                     })
-                elif entry.get('type') == 'click':
+        elif t == 'click':
             clicks.append({
-                        'session_id': entry.get('session_id', ''),
+                'session_id': entry.get('session_id', ''),
                 'timestamp': entry.get('timestamp', ''),
-                        'page': entry.get('page', ''),
-                        'file_clicked': entry.get('file_clicked', ''),
+                'page': entry.get('page', ''),
+                'file_clicked': entry.get('file_clicked', ''),
                 'sequence_order': entry.get('sequence_order', 0)
             })
 
@@ -53,7 +57,7 @@ def main():
     sessions_df, clicks_df = get_analytics_data()
 
     # Bandeau d'information source
-    st.success("Données récupérées depuis le serveur web (nexgate.ch) ou fallback GitHub si indisponible")
+    st.success("Données récupérées depuis le serveur web (nexgate.ch)")
 
     # Métriques principales (alignées Nexgate)
     c1, c2 = st.columns(2)
