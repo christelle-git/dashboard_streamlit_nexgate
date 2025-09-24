@@ -28,16 +28,28 @@ jobs:
           curl -fSL --max-time 20 -z analytics_data.json http://christellelusso.nexgate.ch/analytics_data.json -o analytics_data.json.new
 
       - name: Commit if file changed
+        if: env.download_failed != '1' || env.http_failed != '1'
         run: |
           set -e
-          if ! cmp -s analytics_data.json.new analytics_data.json 2>/dev/null; then
-            mv analytics_data.json.new analytics_data.json
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add analytics_data.json
-            git commit -m "chore: sync analytics_data.json from Nexgate"
-            git push
+          if [ -f analytics_data.json.new ]; then
+            if ! cmp -s analytics_data.json.new analytics_data.json 2>/dev/null; then
+              mv analytics_data.json.new analytics_data.json
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add analytics_data.json
+              git commit -m "chore: sync analytics_data.json from Nexgate."
+              git push
+            else
+              echo "No changes to commit."
+            fi
           else
-            echo "No changes to commit"
+            echo "No file to commit - download failed."
           fi
+
+      - name: Report failure if both downloads failed
+        if: env.download_failed == '1' && env.http_failed == '1'
+        run: |
+          echo "❌ Both HTTPS and HTTP downloads failed - Nexgate may be blocking GitHub Actions."
+          echo "This is expected if Nexgate blocks external IPs."
+          exit 0  # Don't fail the workflow, just report
 
