@@ -181,6 +181,52 @@ git merge main   # pour récupérer les dernières améliorations UI
 git push -u origin streamlit-deploy
 ```
 
+### **Mode Production – Source unique Nexgate (sans fallback)**
+
+Depuis le 24/09/2025, le dashboard Streamlit (branche `streamlit-deploy`) lit les données UNIQUEMENT depuis:
+
+```
+https://christellelusso.nexgate.ch/analytics_data.json
+```
+
+Si Nexgate est indisponible, l’app affiche un message explicite et ne charge pas de données (aucun fallback automatique vers GitHub/local).
+
+Motivation:
+- garantir que les utilisateurs externes voient exactement les données de Nexgate
+- éviter les divergences entre un JSON GitHub et Nexgate
+
+### **Dépannage – Accès HTTPS depuis Streamlit Cloud**
+
+Symptôme: bandeau rouge du type « Nexgate indisponible » avec erreur `Connection refused`.
+
+Checklist:
+1) Vérifier l’URL publique
+   - Navigateur ou terminal local:
+     ```bash
+     curl -I https://christellelusso.nexgate.ch/analytics_data.json
+     ```
+   - Réponse attendue: `HTTP/2 200` (ou `HTTP/1.1 200 OK`) + `content-type: application/json`.
+
+2) Si `curl` OK en local mais échec depuis Streamlit Cloud:
+   - problème d’accessibilité côté hébergeur (pare‑feu/anti‑bot)
+   - certificat/TLS qui refuse certaines connexions clientes
+   - port 443 momentanément fermé
+
+Actions possibles côté Nexgate:
+- Autoriser les requêtes GET publiques sur `analytics_data.json` (aucune auth)
+- Vérifier que le port 443 est ouvert et le certificat valide
+- Lever les protections anti‑bots pour les IPs de sortie de Streamlit Cloud (voir doc Streamlit « outbound IPs » si nécessaire)
+
+Astuce (temporaire pour démo):
+- Utiliser HTTP non‑TLS si autorisé (`http://christellelusso.nexgate.ch/analytics_data.json`) – non recommandé en production
+- OU déclencher manuellement une synchronisation GitHub du JSON (workflow Actions) puis, si besoin, réactiver un fallback manuel via paramètre (à implémenter le cas échéant)
+
+### **Vérifier rapidement côté app**
+
+Dans l’interface Streamlit:
+- si bandeau rouge + message `Connection refused`, l’application est fonctionnelle mais Nexgate refuse la connexion
+- dès que `curl -I` renvoie 200 et que Nexgate est accessible depuis Internet, un simple « Rerun » recharge les données
+
 ### **Script deploy.sh - Quand l'utiliser ?**
 
 Le script `deploy.sh` est **UNIQUEMENT** pour les VPS externes :
