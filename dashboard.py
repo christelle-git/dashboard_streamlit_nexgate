@@ -11,30 +11,33 @@ st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide")
 
 @st.cache_data(ttl=60)
 def get_analytics_data():
-    """Récupère et parse les données JSON distantes.
-    Retourne deux DataFrames: sessions, clicks.
-    """
-    response = None
-    try:
-        response = requests.get(
-            'https://christellelusso.nexgate.ch/analytics_data.json',
-            timeout=10
-        )
-    except Exception as e:
-        st.error(f"Impossible de contacter le serveur: {e}")
-        return pd.DataFrame(), pd.DataFrame()
+    """Récupère les données avec fallbacks (HTTPS → HTTP → GitHub raw → fichier local). Retourne sessions_df, clicks_df."""
+    urls = [
+        'https://christellelusso.nexgate.ch/analytics_data.json',
+        'http://christellelusso.nexgate.ch/analytics_data.json',
+        'https://raw.githubusercontent.com/christelle-git/dashboard_streamlit_nexgate/streamlit-deploy/analytics_data.json'
+    ]
 
-    if response is None or response.status_code != 200:
-        st.error(f"Réponse invalide du serveur: {getattr(response, 'status_code', 'n/a')}")
-        return pd.DataFrame(), pd.DataFrame()
+    data = None
+    for url in urls:
+        try:
+            r = requests.get(url, timeout=10)
+            if r.status_code == 200:
+                data = r.json()
+                break
+        except Exception:
+            continue
 
-    try:
-        data = response.json()
-    except Exception as e:
-        st.error(f"JSON invalide: {e}")
-        return pd.DataFrame(), pd.DataFrame()
+    if data is None:
+        try:
+            import json as _json
+            with open('analytics_data.json', 'r') as f:
+                data = _json.load(f)
+        except Exception as e:
+            st.error(f"Impossible de récupérer les données (HTTPS/HTTP/GitHub/local): {e}")
+            return pd.DataFrame(), pd.DataFrame()
 
-    sessions, clicks = [] , []
+    sessions, clicks = [], []
     for entry in data:
         if entry.get('type') == 'session_start':
             sessions.append({
