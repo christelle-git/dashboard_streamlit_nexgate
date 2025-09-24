@@ -206,3 +206,6 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# GitHub token (local, ne jamais committer)
+.token_github
