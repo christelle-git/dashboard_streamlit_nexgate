@@ -327,7 +327,7 @@ def analyze_user_journey(clicks_df):
     return journey_df, top_paths
 
 def main():
-    st.title("📊 Dashboard Analytics Avancé")
+st.title("Tracking nexgate Christelle")
     st.sidebar.header("🔧 Options")
     
     # Initialize database
@@ -404,8 +404,11 @@ def main():
             # Détails des sessions avec géolocalisation
             st.subheader("📍 Détails des Sessions")
             
-            # Prépare les données pour l'affichage
+            # Prépare les données pour l'affichage (tri du plus récent au plus ancien)
             location_data = sessions_df.copy()
+            if 'timestamp' in location_data.columns:
+                location_data['__ts'] = pd.to_datetime(location_data['timestamp'], errors='coerce')
+                location_data = location_data.sort_values('__ts', ascending=False)
             
             # Ajoute des colonnes manquantes si nécessaire
             if 'country' not in location_data.columns:
@@ -424,7 +427,7 @@ def main():
             available_columns = [col for col in display_columns if col in location_data.columns]
             location_display = location_data[available_columns].copy()
             
-            # Renomme les colonnes pour l'affichage
+            # Renomme les colonnes pour l'affichage (conformité Nexgate)
             column_mapping = {
                 'session_id': 'Session ID',
                 'country': 'Pays',
@@ -434,7 +437,16 @@ def main():
             }
             location_display.columns = [column_mapping.get(col, col) for col in location_display.columns]
             
-            st.dataframe(location_display, use_container_width=True)
+            # Réordonner colonnes: Date, Heure, Session ID, Pays, Ville, IP Utilisateur
+            if 'Heure de Début' in location_display.columns and 'Session ID' in location_display.columns:
+                # Extraire Date et Heure
+                location_display['Date'] = location_data['__ts'].dt.date.astype(str)
+                location_display['Heure'] = location_data['__ts'].dt.strftime('%H:%M:%S')
+                ordered = ['Date', 'Heure', 'Session ID', 'Pays', 'Ville', 'IP Utilisateur']
+                cols = [c for c in ordered if c in location_display.columns]
+                st.dataframe(location_display[cols], use_container_width=True)
+            else:
+                st.dataframe(location_display, use_container_width=True)
             
             # Statistiques de géolocalisation
             st.subheader("📈 Statistiques de Géolocalisation")
