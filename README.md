@@ -1,5 +1,7 @@
 # Dashboard Streamlit – Analytics (Nexgate)
 
+![Sync analytics_data.json from Nexgate](https://github.com/christelle-git/dashboard_streamlit_nexgate/actions/workflows/sync_analytics.yml/badge.svg)
+
 Objectif: déployer rapidement le dashboard en tant que web app sur Streamlit Cloud, en lisant les données depuis `https://christellelusso.nexgate.ch/analytics_data.json`.
 
 Fichiers importants
@@ -14,7 +16,8 @@ Déploiement sur Streamlit Cloud (résumé)
 3. Sur Streamlit Cloud: New app → choisir le repo/branche → Main file: `dashboard.py` → Deploy
 
 Notes
-- Les données sont lues côté app via `requests` depuis Nexgate; aucun fichier JSON local n’est requis.
+- Les données sont lues côté app via `requests` depuis Nexgate avec fallback miroir GitHub.
+- Un bouton "Rafraîchir les données" vide le cache Streamlit et relance l’app.
 - Le stockage local (SQLite) est optionnel et éphémère sur Streamlit Cloud.
 
 ## Déploiement Streamlit Cloud via branche orpheline
@@ -29,7 +32,7 @@ Pour publier uniquement l’app (sans le reste du projet), utiliser une branche 
 - Ajouter seulement les fichiers requis:
   ```bash
   git add -f dashboard.py requirements.txt .streamlit/config.toml
-  git commit -m "Initial Streamlit Cloud app (fichiers minimaux)"
+  git commit -m "Initial Streamlit Cloud app (fichiers minimaux)."
   ```
 - Pousser cette branche vers le repo dédié:
   ```bash
