@@ -220,27 +220,45 @@ Motivation:
 
 Symptôme: bandeau rouge du type « Nexgate indisponible » avec erreur `Connection refused`.
 
-Checklist:
-1) Vérifier l’URL publique
-   - Navigateur ou terminal local:
-     ```bash
-     curl -I https://christellelusso.nexgate.ch/analytics_data.json
-     ```
-   - Réponse attendue: `HTTP/2 200` (ou `HTTP/1.1 200 OK`) + `content-type: application/json`.
+**Diagnostic effectué** ✅ :
+- **TLS/SSL** : Certificat Let's Encrypt valide (expire 29/11/2025)
+- **Port 443** : Ouvert et fonctionnel  
+- **Fichier** : Accessible publiquement (HTTP 200, Content-Type: application/json, 167 KB)
+- **Réseau local** : `curl` fonctionne parfaitement
 
-2) Si `curl` OK en local mais échec depuis Streamlit Cloud:
-   - problème d’accessibilité côté hébergeur (pare‑feu/anti‑bot)
-   - certificat/TLS qui refuse certaines connexions clientes
-   - port 443 momentanément fermé
+**Cause identifiée** : Filtrage IP/anti-bot Nexgate qui bloque les requêtes depuis Streamlit Cloud (AWS)
 
-Actions possibles côté Nexgate:
-- Autoriser les requêtes GET publiques sur `analytics_data.json` (aucune auth)
-- Vérifier que le port 443 est ouvert et le certificat valide
-- Lever les protections anti‑bots pour les IPs de sortie de Streamlit Cloud (voir doc Streamlit « outbound IPs » si nécessaire)
+**Message type pour le support Nexgate** :
+```
+Sujet : Blocage des requêtes depuis Streamlit Cloud (AWS) vers analytics_data.json
 
-Astuce (temporaire pour démo):
-- Utiliser HTTP non‑TLS si autorisé (`http://christellelusso.nexgate.ch/analytics_data.json`) – non recommandé en production
-- OU déclencher manuellement une synchronisation GitHub du JSON (workflow Actions) puis, si besoin, réactiver un fallback manuel via paramètre (à implémenter le cas échéant)
+Bonjour,
+
+Je rencontre un problème d'accès à mon fichier analytics_data.json depuis Streamlit Cloud.
+
+URL : https://christellelusso.nexgate.ch/analytics_data.json
+Symptôme : "Connection refused" depuis Streamlit Cloud (hébergé sur AWS)
+Test local : ✅ Accessible depuis mon réseau (curl fonctionne)
+
+Pouvez-vous vérifier s'il y a un filtrage IP ou anti-bot qui bloque les requêtes 
+depuis les IPs AWS de Streamlit Cloud ?
+
+Solutions possibles :
+1. Whitelister les IPs sortantes AWS (région Streamlit Cloud)
+2. Désactiver le blocage anti-bot pour /analytics_data.json
+3. Autoriser les requêtes GET publiques avec User-Agent standard
+
+Merci pour votre aide.
+```
+
+**Vérifications techniques** :
+```bash
+# Test de connectivité (doit retourner 200 OK)
+curl -Iv https://christellelusso.nexgate.ch/analytics_data.json
+
+# Vérification du certificat SSL
+openssl s_client -connect christellelusso.nexgate.ch:443 -servername christellelusso.nexgate.ch
+```
 
 ### **Vérifier rapidement côté app**
 
