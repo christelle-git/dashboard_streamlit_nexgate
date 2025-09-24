@@ -7,7 +7,14 @@ from datetime import datetime, timedelta
 import json
 from collections import Counter
 
-from config_setup import Config
+"""Compatibilité Streamlit Cloud: fallback de configuration si config_setup.py
+n'est pas présent dans le repo minimal déployé."""
+try:
+    from config_setup import Config
+except Exception:
+    class Config:
+        DASHBOARD_TITLE = "Analytics Avancé - Christelle Lusso"
+        DATABASE_PATH = ":memory:"
 import requests
 import os
 
