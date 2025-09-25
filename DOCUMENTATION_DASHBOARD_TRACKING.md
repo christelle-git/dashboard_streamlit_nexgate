@@ -295,6 +295,8 @@ openssl s_client -connect christellelusso.nexgate.ch:443 -servername christellel
 2. **Fichier analytics_data.json initial** : Ajouté à la branche `streamlit-deploy` (167 KB, 4377 lignes)
 3. **Bouton "Rafraîchir les données"** : Vide le cache Streamlit et relance l'app
 4. **IndentationError corrigé** : Ligne 47 dans `dashboard.py` (boucle `for entry in data:`)
+5. **Server Error Streamlit Cloud** : dashboard.py restauré (code SQLite corrompu supprimé)
+6. **SEO Google** : robots.txt et sitemap.xml mis à jour pour éviter le bannissement
 
 **État final** :
 - ✅ **Streamlit Cloud** : Fonctionne avec fallback miroir GitHub
@@ -318,6 +320,11 @@ openssl s_client -connect christellelusso.nexgate.ch:443 -servername christellel
 - **Symptôme** : "mv: cannot stat 'analytics_data.json.new': No such file or directory"
 - **Cause** : Nexgate bloque les IPs externes (GitHub Actions)
 - **Solution** : Workflow corrigé pour gérer cette situation gracieusement
+
+**4. Server Error sur Streamlit Cloud**
+- **Symptôme** : "Error: Server Error" sur https://dashboard-nexgate-christelle.streamlit.app
+- **Cause** : Code SQLite corrompu dans dashboard.py
+- **Solution** : dashboard.py restauré avec version Streamlit Cloud fonctionnelle
 
 ### **Vérifier rapidement côté app**
 
