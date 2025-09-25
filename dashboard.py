@@ -1,548 +1,151 @@
 import streamlit as st
 import pandas as pd
-import sqlite3
 import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime, timedelta
-import json
-from collections import Counter
-
-"""Compatibilité Streamlit Cloud: fallback de configuration si config_setup.py
-n'est pas présent dans le repo minimal déployé."""
-try:
-    from config_setup import Config
-except Exception:
-    class Config:
-        DASHBOARD_TITLE = "Analytics Avancé - Christelle Lusso"
-        DATABASE_PATH = ":memory:"
+from datetime import datetime
 import requests
-import os
+import time
 
-st.set_page_config(
-    page_title=Config.DASHBOARD_TITLE,
-    page_icon="📊",
-    layout="wide"
-)
+# Streamlit Cloud: aucune dépendance à config_setup.py nécessaire
+APP_TITLE = "Tracking nexgate Christelle"
 
-# Base de données
-def init_database():
-    conn = sqlite3.connect(Config.DATABASE_PATH)
-    cursor = conn.cursor()
-    
-    # Table pour les sessions utilisateur
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS user_sessions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id TEXT,
-            user_ip TEXT,
-            user_agent TEXT,
-            start_time DATETIME,
-            end_time DATETIME,
-            country TEXT,
-            city TEXT,
-            latitude REAL,
-            longitude REAL,
-            date DATE
-        )
-    ''')
-    
-    # Table pour les clics détaillés
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS detailed_clicks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id TEXT,
-            element_id TEXT,
-            element_type TEXT,
-            page TEXT,
-            file_clicked TEXT,
-            timestamp DATETIME,
-            sequence_order INTEGER,
-            date DATE
-        )
-    ''')
-    
-    # Table pour les parcours utilisateur
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS user_journeys (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id TEXT,
-            journey_path TEXT,
-            total_clicks INTEGER,
-            session_duration INTEGER,
-            date DATE
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
+st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide")
 
-@st.cache_data(ttl=60)  # Cache pendant 1 minute pour les données distantes
-def get_remote_analytics_data():
-    """Récupère les données depuis le serveur distant"""
-    try:
-        # Utilise uniquement le fichier local en cas d'indisponibilité du serveur
-        local_file = "test_local_data.json"
-        if os.path.exists(local_file):
-            with open(local_file, 'r') as f:
-                data = json.load(f)
-        else:
-            st.warning("⚠️ Serveur nexgate.ch indisponible et fichier local non trouvé")
-            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-        
-        if not data:
-            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-        
-        # Convertit les données JSON en DataFrames
-        sessions_data = []
-        clicks_data = []
-        
-        for entry in data:
-            timestamp = datetime.fromisoformat(entry.get('timestamp', '').replace('Z', '+00:00'))
-            session_id = entry.get('session_id', '')
-            
-            # Traite les sessions
-            if entry.get('type') == 'session_start':
-                sessions_data.append({
-                    'session_id': session_id,
-                    'user_ip': entry.get('client_ip', ''),
-                    'user_agent': entry.get('user_agent', ''),
-                    'start_time': timestamp,
-                    'end_time': timestamp,  # À améliorer si on a les données de fin
-                    'country': entry.get('country', ''),
-                    'city': entry.get('city', ''),
-                    'latitude': entry.get('latitude'),
-                    'longitude': entry.get('longitude'),
-                    'date': timestamp.date()
-                })
-            
-            # Traite les clics
-            elif entry.get('type') == 'click':
-                clicks_data.append({
-                    'session_id': session_id,
-                    'element_id': entry.get('element_id', ''),
-                    'element_type': entry.get('element_type', ''),
-                    'page': entry.get('page', ''),
-                    'file_clicked': entry.get('file_clicked', ''),
-                    'timestamp': timestamp,
-                    'sequence_order': entry.get('sequence_order', 0),
-                    'date': timestamp.date()
-                })
-        
-        sessions_df = pd.DataFrame(sessions_data)
-        clicks_df = pd.DataFrame(clicks_data)
-        
-        # Crée un DataFrame vide pour les parcours (à implémenter si nécessaire)
-        journeys_df = pd.DataFrame()
-        
-        return sessions_df, clicks_df, journeys_df
-        
-    except Exception as e:
-        st.warning(f"Impossible de récupérer les données distantes: {e}")
-        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-
-@st.cache_data(ttl=300)  # Cache pendant 5 minutes
-def get_local_analytics_data():
-    """Récupère les données depuis la base locale"""
-    conn = sqlite3.connect(Config.DATABASE_PATH)
-    
-    # Données de sessions
-    sessions_query = """
-    SELECT * FROM user_sessions 
-    WHERE date >= date('now', '-30 days')
-    ORDER BY start_time DESC
-    """
-    sessions_df = pd.read_sql_query(sessions_query, conn)
-    
-    # Données de clics détaillés
-    clicks_query = """
-    SELECT * FROM detailed_clicks 
-    WHERE date >= date('now', '-30 days')
-    ORDER BY timestamp DESC
-    """
-    clicks_df = pd.read_sql_query(clicks_query, conn)
-    
-    # Données de parcours
-    journeys_query = """
-    SELECT * FROM user_journeys 
-    WHERE date >= date('now', '-30 days')
-    ORDER BY date DESC
-    """
-    journeys_df = pd.read_sql_query(journeys_query, conn)
-    
-    conn.close()
-    return sessions_df, clicks_df, journeys_df
-
-@st.cache_data(ttl=1, show_spinner=False)  # Cache réduit à 1 seconde pour des mises à jour immédiates
+@st.cache_data(ttl=60)
 def get_analytics_data():
-    """Récupère les données depuis le serveur web"""
+    """Tente de charger les données depuis Nexgate, puis depuis le miroir GitHub en fallback.
+    Retourne: (sessions_df, clicks_df, source_str)
+    """
+    primary_url = 'https://christellelusso.nexgate.ch/analytics_data.json'
+    mirror_url = (
+        'https://raw.githubusercontent.com/christelle-git/dashboard_streamlit_nexgate/'
+        'streamlit-deploy/analytics_data.json'
+    )
+
+    data = None
+    source = ""
+
+    # Source principale: Nexgate
     try:
-        # Récupère les données depuis votre serveur web
-        response = requests.get('https://christellelusso.nexgate.ch/analytics_data.json', timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-    
-            # Convertit les données JSON en DataFrames
-            sessions_data = []
-            clicks_data = []
-            
+        resp = requests.get(primary_url, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        source = "nexgate"
+    except Exception:
+        # Fallback: miroir GitHub
+        try:
+            resp2 = requests.get(mirror_url, timeout=10)
+            resp2.raise_for_status()
+            data = resp2.json()
+            source = "github_mirror"
+        except Exception as err2:
+            st.error("Impossible de charger les données (Nexgate et miroir GitHub indisponibles).")
+            st.caption(str(err2))
+            return pd.DataFrame(), pd.DataFrame(), "none"
+
+    sessions = []
+    clicks = []
             for entry in data:
-                if entry.get('type') == 'session_start':
-                    sessions_data.append({
+        t = entry.get('type')
+        if t == 'session_start':
+            sessions.append({
                         'session_id': entry.get('session_id', ''),
-                        'user_ip': entry.get('client_ip', ''),
-                        'user_agent': entry.get('user_agent', ''),
-                        'start_time': entry.get('timestamp', ''),
-                        'country': entry.get('country', ''),
-                        'city': entry.get('city', ''),
-                        'latitude': entry.get('latitude', 0),
-                        'longitude': entry.get('longitude', 0),
-                        'date': entry.get('timestamp', '')[:10] if entry.get('timestamp') else ''
-                    })
-                elif entry.get('type') == 'session_end':
-                    # Met à jour la session existante avec les données de fin
-                    session_id = entry.get('session_id', '')
-                    # Cherche si cette session existe déjà dans sessions_data
-                    for session in sessions_data:
-                        if session['session_id'] == session_id:
-                            session['end_time'] = entry.get('timestamp', '')
-                            session['session_duration'] = entry.get('session_duration', 0)
-                            session['click_count'] = entry.get('click_count', 0)
-                            break
-                    else:
-                        # Si la session n'existe pas, on la crée avec les données de fin
-                        sessions_data.append({
-                            'session_id': session_id,
-                            'user_ip': entry.get('client_ip', ''),
-                            'user_agent': entry.get('user_agent', ''),
-                            'start_time': None,  # Pas de début de session
-                            'end_time': entry.get('timestamp', ''),
-                            'country': entry.get('country', ''),
-                            'city': entry.get('city', ''),
-                            'latitude': entry.get('latitude', 0),
-                            'longitude': entry.get('longitude', 0),
-                            'date': entry.get('timestamp', '')[:10] if entry.get('timestamp') else '',
-                            'session_duration': entry.get('session_duration', 0),
-                            'click_count': entry.get('click_count', 0)
-                        })
-                elif entry.get('type') == 'click':
-                    clicks_data.append({
-                        'session_id': entry.get('session_id', ''),
-                        'element_id': entry.get('element_id', ''),
-                        'element_type': entry.get('element_type', ''),
-                        'page': entry.get('page', ''),
-                        'file_clicked': entry.get('file_clicked', ''),
                         'timestamp': entry.get('timestamp', ''),
-                        'sequence_order': entry.get('sequence_order', 0),
-                        'date': entry.get('timestamp', '')[:10] if entry.get('timestamp') else '',
                         'country': entry.get('country', ''),
                         'city': entry.get('city', ''),
+                'client_ip': entry.get('client_ip', ''),
                         'latitude': entry.get('latitude', 0),
                         'longitude': entry.get('longitude', 0)
                     })
-            
-            sessions_df = pd.DataFrame(sessions_data)
-            clicks_df = pd.DataFrame(clicks_data)
-            journeys_df = pd.DataFrame()  # À implémenter si nécessaire
-            
-            # Enrichit les sessions avec les données de géolocalisation des clics
-            if not clicks_df.empty and not sessions_df.empty:
-                # Récupère les données de géolocalisation depuis les clics
-                location_data = clicks_df[['session_id', 'country', 'city', 'latitude', 'longitude']].dropna(subset=['country', 'city'])
-    
-                if not location_data.empty:
-                    # Prend la première occurrence de géolocalisation par session
-                    location_data = location_data.groupby('session_id').first().reset_index()
-                    
-                    # Fusionne avec les sessions
-                    sessions_df = sessions_df.merge(location_data, on='session_id', how='left', suffixes=('', '_click'))
-                    
-                    # Remplit les valeurs manquantes
-                    sessions_df['country'] = sessions_df['country'].fillna(sessions_df['country_click']).fillna('Non spécifié')
-                    sessions_df['city'] = sessions_df['city'].fillna(sessions_df['city_click']).fillna('Non spécifié')
-                    sessions_df['latitude'] = sessions_df['latitude'].fillna(sessions_df['latitude_click']).fillna(0)
-                    sessions_df['longitude'] = sessions_df['longitude'].fillna(sessions_df['longitude_click']).fillna(0)
-                    
-                    # Supprime les colonnes en double
-                    sessions_df = sessions_df.drop(['country_click', 'city_click', 'latitude_click', 'longitude_click'], axis=1, errors='ignore')
-            
-            return sessions_df, clicks_df, journeys_df, "web"  # Retourne la source
-        else:
-            # Fallback vers les données locales
-            local_sessions, local_clicks, local_journeys = get_local_analytics_data()
-            return local_sessions, local_clicks, local_journeys, "local"
-            
-    except Exception as e:
-        # Fallback vers les données locales
-        local_sessions, local_clicks, local_journeys = get_local_analytics_data()
-        return local_sessions, local_clicks, local_journeys, "local"
+        elif t == 'click':
+            clicks.append({
+                'session_id': entry.get('session_id', ''),
+                'timestamp': entry.get('timestamp', ''),
+                'page': entry.get('page', ''),
+                'file_clicked': entry.get('file_clicked', ''),
+                'sequence_order': entry.get('sequence_order', 0)
+            })
 
+    return pd.DataFrame(sessions), pd.DataFrame(clicks), source
 
-
-def analyze_user_journey(clicks_df):
-    """Analyse les parcours utilisateur"""
-    if clicks_df.empty:
-        return pd.DataFrame(), []
-    
-    # Groupe par session et crée les parcours
-    journey_data = []
-    common_paths = []
-    
-    for session_id in clicks_df['session_id'].unique():
-        session_clicks = clicks_df[clicks_df['session_id'] == session_id].sort_values('sequence_order')
-        
-        if len(session_clicks) > 1:
-            # Crée le chemin du parcours
-            path = []
-            files_clicked = []
-            
-            for _, click in session_clicks.iterrows():
-                if click['page']:
-                    path.append(click['page'])
-                if click['file_clicked']:
-                    files_clicked.append(click['file_clicked'])
-            
-            if path:
-                journey_str = ' → '.join(path)
-                files_str = ', '.join(files_clicked) if files_clicked else 'Aucun fichier'
-                
-                journey_data.append({
-                    'session_id': session_id,
-                    'parcours': journey_str,
-                    'fichiers_cliques': files_str,
-                    'nombre_clics': len(session_clicks),
-                    'duree_estimee': f"{len(session_clicks) * 30}s"  # Estimation basique
-                })
-                
-                common_paths.append(journey_str)
-    
-    journey_df = pd.DataFrame(journey_data)
-    
-    # Trouve les parcours les plus communs
-    if common_paths:
-        path_counts = Counter(common_paths)
-        top_paths = path_counts.most_common(10)
-    else:
-        top_paths = []
-    
-    return journey_df, top_paths
 
 def main():
-st.title("Tracking nexgate Christelle")
-    st.sidebar.header("🔧 Options")
-    
-    # Initialize database
-    init_database()
-    
-    # Récupération des données
-    try:
-        sessions_df, clicks_df, journeys_df, data_source = get_analytics_data()
-        
-        # Indicateur de source de données
-        if data_source == "web":
-            st.success(f"✅ Données récupérées depuis le serveur web (nexgate.ch) - {datetime.now().strftime('%H:%M:%S')}")
-        else:
-            st.info(f"ℹ️ Données récupérées depuis la base locale - {datetime.now().strftime('%H:%M:%S')}")
-            
-    except Exception as e:
-        st.error(f"Erreur lors du chargement des données: {e}")
-        st.info("Assurez-vous que la base de données est initialisée et contient des données.")
-        return
-    
-    # Filtres dans la sidebar
-    date_range = st.sidebar.selectbox(
-        "Période d'analyse",
-        ["7 derniers jours", "30 derniers jours", "Tout"]
-    )
-    
-    show_realtime = st.sidebar.checkbox("Actualisation automatique", value=False)
-    
-    if show_realtime:
-        st.sidebar.info("🔄 Actualisation toutes les 30 secondes")
-    
-    # Bouton de rafraîchissement manuel
-    col1, col2 = st.sidebar.columns(2)
-    with col1:
-        if st.button("🔄 Rafraîchir"):
+    st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide")
+    st.title(APP_TITLE)
+
+    # Action: rafraîchir les données (vide le cache et relance)
+    c_refresh, _ = st.columns([1, 9])
+    with c_refresh:
+        if st.button("🔄 Rafraîchir les données"):
             st.cache_data.clear()
             st.rerun()
-    with col2:
-        if st.button("🗑️ Vider Cache"):
-            st.cache_data.clear()
-            st.success("Cache vidé !")
-    
-    # Métriques principales
-    st.subheader("📈 Métriques Principales")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        total_sessions = len(sessions_df['session_id'].unique()) if not sessions_df.empty else 0
-        st.metric("Sessions Totales", total_sessions)
-    
-    with col2:
-        total_clicks = len(clicks_df) if not clicks_df.empty else 0
-        st.metric("Clics Totaux", total_clicks)
-    
-    with col3:
-        unique_countries = int(sessions_df['country'].nunique()) if not sessions_df.empty else 0
-        st.metric("Pays Uniques", unique_countries)
-    
-    with col4:
-        total_sessions = len(sessions_df) if not sessions_df.empty else 0
-        st.metric("Sessions Totales", total_sessions)
-    
-    # Onglets pour différentes analyses (ordre et libellés comme Nexgate)
-    tab1, tab2, tab3 = st.tabs(["🌍 Géolocalisation", "📁 Tracking par Fichier", "🚶 Parcours Utilisateurs"])
-    
+
+    sessions_df, clicks_df, source = get_analytics_data()
+
+    # Bandeau d'information source
+    if source == "nexgate":
+        st.success("Source des données: serveur Nexgate (production)")
+    elif source == "github_mirror":
+        st.warning("Source des données: miroir GitHub (Nexgate indisponible)")
+    else:
+        st.error("Aucune source de données disponible")
+
+    # Métriques principales (alignées Nexgate)
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric("Clics Totaux", int(len(clicks_df)) if not clicks_df.empty else 0)
+    with c2:
+        st.metric("Sessions Totales", int(sessions_df['session_id'].nunique()) if not sessions_df.empty else 0)
+
+    tab1, tab2, tab3 = st.tabs(["🌍 Géolocalisation", "📁 Tracking par fichier", "🚶 Parcours Utilisateurs"])
+
+    # Onglet Géolocalisation (tableau: Date, Heure, Session ID, Pays, Ville, IP)
     with tab1:
-        st.subheader("🌍 Géolocalisation des Sessions")
-        
-        if not sessions_df.empty:
-            # Vérifie si nous avons des données de géolocalisation
-            has_location_data = 'country' in sessions_df.columns or 'city' in sessions_df.columns
-            
-            # Détails des sessions avec géolocalisation
-            st.subheader("📍 Détails des Sessions")
-            
-            # Prépare les données pour l'affichage (tri du plus récent au plus ancien)
-            location_data = sessions_df.copy()
-            if 'timestamp' in location_data.columns:
-                location_data['__ts'] = pd.to_datetime(location_data['timestamp'], errors='coerce')
-                location_data = location_data.sort_values('__ts', ascending=False)
-            
-            # Ajoute des colonnes manquantes si nécessaire
-            if 'country' not in location_data.columns:
-                location_data['country'] = 'Non spécifié'
-            if 'city' not in location_data.columns:
-                location_data['city'] = 'Non spécifié'
-            if 'latitude' not in location_data.columns:
-                location_data['latitude'] = 0
-            if 'longitude' not in location_data.columns:
-                location_data['longitude'] = 0
-            
-            # Affiche les sessions avec géolocalisation
-            display_columns = ['session_id', 'country', 'city', 'start_time', 'user_ip']
-            
-            # Filtre les colonnes existantes
-            available_columns = [col for col in display_columns if col in location_data.columns]
-            location_display = location_data[available_columns].copy()
-            
-            # Renomme les colonnes pour l'affichage (conformité Nexgate)
-            column_mapping = {
-                'session_id': 'Session ID',
-                'country': 'Pays',
-                'city': 'Ville',
-                'start_time': 'Heure de Début',
-                'user_ip': 'IP Utilisateur',
-            }
-            location_display.columns = [column_mapping.get(col, col) for col in location_display.columns]
-            
-            # Réordonner colonnes: Date, Heure, Session ID, Pays, Ville, IP Utilisateur
-            if 'Heure de Début' in location_display.columns and 'Session ID' in location_display.columns:
-                # Extraire Date et Heure
-                location_display['Date'] = location_data['__ts'].dt.date.astype(str)
-                location_display['Heure'] = location_data['__ts'].dt.strftime('%H:%M:%S')
-                ordered = ['Date', 'Heure', 'Session ID', 'Pays', 'Ville', 'IP Utilisateur']
-                cols = [c for c in ordered if c in location_display.columns]
-                st.dataframe(location_display[cols], use_container_width=True)
-            else:
-                st.dataframe(location_display, use_container_width=True)
-            
-            # Statistiques de géolocalisation
-            st.subheader("📈 Statistiques de Géolocalisation")
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                unique_countries = location_data['country'].nunique() if 'country' in location_data.columns else 0
-                st.metric("Pays Uniques", unique_countries)
-            
-            with col2:
-                unique_cities = location_data['city'].nunique() if 'city' in location_data.columns else 0
-                st.metric("Villes Uniques", unique_cities)
-            
-            with col3:
-                total_sessions = len(location_data)
-                st.metric("Total Sessions", total_sessions)
+        if sessions_df.empty:
+            st.info("Aucune session")
         else:
-            st.info("Aucune donnée de session disponible")
-    
-    # Onglet 2: Tracking par fichier
+            df = sessions_df.copy()
+            df['__ts'] = pd.to_datetime(df['timestamp'], errors='coerce')
+            df = df.sort_values('__ts', ascending=False)
+            df['Date'] = df['__ts'].dt.date.astype(str)
+            df['Heure'] = df['__ts'].dt.strftime('%H:%M:%S')
+            df.rename(columns={'session_id': 'Session ID', 'country': 'Pays', 'city': 'Ville', 'client_ip': 'IP Utilisateur'}, inplace=True)
+            ordered = ['Date', 'Heure', 'Session ID', 'Pays', 'Ville', 'IP Utilisateur']
+            show_cols = [c for c in ordered if c in df.columns]
+            st.subheader("🌍 Géolocalisation des Sessions")
+            st.dataframe(df[show_cols], use_container_width=True)
+
+    # Onglet Fichiers cliqués
     with tab2:
         st.subheader("📁 Fichiers les Plus Cliqués")
-        if not clicks_df.empty:
-            files_data = clicks_df[clicks_df['file_clicked'].notna()]
-            if not files_data.empty:
-                file_counts = files_data['file_clicked'].value_counts().head(15)
-                fig = px.bar(x=file_counts.index, y=file_counts.values,
-                             title="Fichiers les plus cliqués")
+        if clicks_df.empty:
+            st.info("Aucun clic")
+        else:
+            files = clicks_df['file_clicked'].dropna()
+            if not files.empty:
+                counts = files.value_counts().head(15)
+                fig = px.bar(x=counts.index, y=counts.values, title="Fichiers les plus cliqués")
                 fig.update_xaxes(title="Fichier")
                 fig.update_yaxes(title="Nombre de clics")
                 st.plotly_chart(fig, use_container_width=True)
-
-            # Détails des clics
-            details = files_data.copy()
+            details = clicks_df.copy()
             details['Date'] = pd.to_datetime(details['timestamp']).dt.strftime('%d/%m/%Y %H:%M')
             st.dataframe(details[['Date', 'page', 'file_clicked']].fillna(''), use_container_width=True)
-        else:
-            st.info("Aucune donnée de clics disponible")
-    
-    # Onglet 3: Parcours Utilisateurs
+
+    # Onglet Parcours Utilisateurs (simplifié)
     with tab3:
         st.subheader("🚶 Parcours Utilisateurs")
-        if not clicks_df.empty:
-            journey_df, top_paths = analyze_user_journey(clicks_df)
-            if not journey_df.empty:
-                st.subheader("🏆 Parcours les Plus Fréquents")
-                if top_paths:
-                    paths_data = pd.DataFrame(top_paths, columns=['Parcours', 'Fréquence'])
-                    fig = px.bar(paths_data.head(5), x='Fréquence', y='Parcours',
-                                 orientation='h', title="Top 5 des Parcours")
-                    st.plotly_chart(fig, use_container_width=True)
-                st.subheader("📋 Détails des Parcours")
-                st.dataframe(journey_df, use_container_width=True)
-            else:
-                st.info("Aucun parcours utilisateur détecté")
+        if clicks_df.empty:
+            st.info("Aucun parcours disponible")
         else:
-            st.info("Aucune donnée de clics disponible")
-    
-    # Section d'export
-    st.subheader("💾 Export des Données")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("📥 Télécharger Sessions"):
-            csv = sessions_df.to_csv(index=False)
-            st.download_button(
-                label="Sessions CSV",
-                data=csv,
-                file_name=f"sessions_{datetime.now().strftime('%Y%m%d')}.csv",
-                mime="text/csv"
+            journeys = (
+                clicks_df.sort_values('sequence_order')
+                .groupby('session_id')['page']
+                .apply(lambda s: ' → '.join([p for p in s.astype(str) if p]))
+                .reset_index(name='Parcours')
             )
-    
-    with col2:
-        if st.button("📥 Télécharger Clics"):
-            csv = clicks_df.to_csv(index=False)
-            st.download_button(
-                label="Clics CSV",
-                data=csv,
-                file_name=f"clicks_{datetime.now().strftime('%Y%m%d')}.csv",
-                mime="text/csv"
-            )
-    
-    with col3:
-        if st.button("📥 Télécharger Parcours"):
-            if not journeys_df.empty:
-                csv = journeys_df.to_csv(index=False)
-                st.download_button(
-                    label="Parcours CSV",
-                    data=csv,
-                    file_name=f"journeys_{datetime.now().strftime('%Y%m%d')}.csv",
-                    mime="text/csv"
-                )
-    
-    # Auto-refresh
-    if show_realtime:
-        st.rerun()
+            journeys.rename(columns={'session_id': 'Session ID'}, inplace=True)
+            st.dataframe(journeys, use_container_width=True)
+
 
 if __name__ == "__main__":
     main()
