@@ -20,8 +20,20 @@
   </url>
   <url>
     <loc>https://christellelusso.nexgate.ch/drawing/</loc>
-    <lastmod>2025-09-21</lastmod>
+    <lastmod>2025-09-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://christellelusso.nexgate.ch/tdmarne1.html</loc>
+    <lastmod>2025-09-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://christellelusso.nexgate.ch/tdmarne2.html</loc>
+    <lastmod>2025-09-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>
